@@ -998,20 +998,37 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         else if (type === 'podcast') setPodcast(text);
         else if (type === 'studyplan') setStudyPlan(text);
         else if (type === 'flashcards') {
-          const clean = text.replace(/```json|```/g, '').trim();
-          let cards = JSON.parse(clean) as Flashcard[];
-          if (cards.length > flashcardCount) cards = cards.slice(0, flashcardCount);
-          setFlashcards(cards);
-          setFlipped(new Array(cards.length).fill(false));
+          try {
+            const clean = text.replace(/```json|```/g, '').replace(/```/g, '').trim();
+            let cards = JSON.parse(clean) as Flashcard[];
+            if (!Array.isArray(cards)) throw new Error('Not an array');
+            if (cards.length > flashcardCount) cards = cards.slice(0, flashcardCount);
+            setFlashcards(cards);
+            setFlipped(new Array(cards.length).fill(false));
+            setToast({ message: `Generated ${cards.length} flashcards!`, type: 'success' });
+          } catch (e) {
+            console.error('Flashcards JSON parse error:', e);
+            setToast({ message: 'Could not parse flashcards. Try regenerating.', type: 'error' });
+            setFlashcards([]);
+          }
         } else if (type === 'quiz') {
-          const clean = text.replace(/```json|```/g, '').trim();
-          let parsed = JSON.parse(clean) as QuizQuestion[];
-          if (parsed.length > quizLength) parsed = parsed.slice(0, quizLength);
-          setQuiz(parsed);
-          setAnswers([]);
+          try {
+            const clean = text.replace(/```json|```/g, '').replace(/```/g, '').trim();
+            let parsed = JSON.parse(clean) as QuizQuestion[];
+            if (!Array.isArray(parsed)) throw new Error('Not an array');
+            if (parsed.length > quizLength) parsed = parsed.slice(0, quizLength);
+            setQuiz(parsed);
+            setAnswers([]);
+            setToast({ message: `Generated ${parsed.length} quiz questions!`, type: 'success' });
+          } catch (e) {
+            console.error('Quiz JSON parse error:', e);
+            setToast({ message: 'Could not parse quiz. Try regenerating.', type: 'error' });
+            setQuiz([]);
+          }
         }
       } catch (err) {
         console.error('Error loading content:', err);
+        setToast({ message: 'Failed to generate content', type: 'error' });
       } finally {
         setAiLoading(false);
       }
