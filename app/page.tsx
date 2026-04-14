@@ -124,6 +124,15 @@ interface StudySet {
   created_at: string;
 }
 
+interface StudySetFile {
+  id: string;
+  study_set_id: string;
+  file_name: string;
+  content: string;
+  file_type: string;
+  created_at: string;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -591,8 +600,9 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
     try {
       const text = await parseFile(file);
       setContent(prev => prev ? prev + '\n\n' + text : text);
+      alert('File loaded! Click a tab to generate study materials.');
     } catch (err: any) {
-      setToast({ message: err.message || 'Could not read file', type: 'error' });
+      alert(err.message || 'Could not read file');
     } finally {
       setFileLoading(false);
     }
@@ -606,7 +616,7 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
       const text = await getYouTubeTranscript(url);
       setContent(prev => prev ? prev + '\n\n--- YOUTUBE TRANSCRIPT ---\n' + text : text);
     } catch (err: any) {
-      setToast({ message: err.message || 'Could not get transcript', type: 'error' });
+      alert(err.message || 'Could not get transcript');
     } finally {
       setYtLoading(false);
     }
@@ -771,6 +781,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [studySets, setStudySets] = useState<StudySet[]>([]);
   const [selectedStudySet, setSelectedStudySet] = useState<StudySet | null>(null);
+  const [studySetFiles, setStudySetFiles] = useState<any[]>([]);
   const [enrolledClasses, setEnrolledClasses] = useState<string[]>([]);
   const [classNotes, setClassNotes] = useState<Record<string, string>>({});
   const [selectedClass, setSelectedClass] = useState<VPClass | null>(null);
@@ -891,7 +902,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
       const text = await parseFile(file);
       setMyDocs(prev => prev ? prev + '\n\n' + text : text);
       
-      let targetSet = studySets.find(s => s.title === file.name.replace(/\.[^/.]+$/, ''));
+      let targetSet = selectedStudySet || studySets.find(s => s.title === file.name.replace(/\.[^/.]+$/, ''));
       if (!targetSet) {
         const setTitle = file.name.replace(/\.[^/.]+$/, '');
         const res = await fetch('/api/study-sets', {
@@ -916,6 +927,10 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
             fileType: file.type 
           }),
         });
+        if (selectedStudySet?.id === targetSet.id) {
+          setStudySetFiles(prev => [...prev, { id: Date.now().toString(), study_set_id: targetSet.id, file_name: file.name, content: text, file_type: file.type, created_at: new Date().toISOString() }]);
+        }
+        setToast({ message: `Saved to "${targetSet.title}"`, type: 'success' });
       }
     } catch (err: any) {
       setToast({ message: err.message || 'Could not read file', type: 'error' });
@@ -933,7 +948,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
       const text = await getYouTubeTranscript(url);
       setMyDocs(prev => prev ? prev + '\n\n--- YOUTUBE TRANSCRIPT ---\n' + text : text);
     } catch (err: any) {
-      setToast({ message: err.message || 'Could not get transcript', type: 'error' });
+      alert(err.message || 'Could not get transcript');
     } finally {
       setYtLoading(false);
     }
@@ -1287,8 +1302,21 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                     {studySets.map(set => (
                       <div
                         key={set.id}
-                        className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#14b8a6]/50 transition-colors cursor-pointer group"
-                        onClick={() => setSelectedStudySet(set.id === selectedStudySet?.id ? null : set)}
+                        className={`rounded-xl p-4 border transition-colors cursor-pointer group ${
+                          selectedStudySet?.id === set.id 
+                            ? 'bg-[#14b8a6]/10 border-[#14b8a6]/50' 
+                            : 'bg-white/5 border-white/10 hover:border-[#14b8a6]/50'
+                        }`}
+                        onClick={async () => {
+                          if (selectedStudySet?.id === set.id) {
+                            setSelectedStudySet(null);
+                          } else {
+                            setSelectedStudySet(set);
+                            const res = await fetch(`/api/study-set-files?studySetId=${set.id}`);
+                            const data = await res.json();
+                            setStudySetFiles(data.files || []);
+                          }
+                        }}
                       >
                         <div className="flex items-center justify-between">
                           <div>
@@ -1308,6 +1336,35 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                             ✕
                           </button>
                         </div>
+                        {selectedStudySet?.id === set.id && studySetFiles.length > 0 && (
+                          <div className="mt-4 pt-4 border-t border-white/10">
+                            <div className="text-xs text-gray-500 mb-2">FILES ({studySetFiles.length})</div>
+                            {studySetFiles.map(file => (
+                              <div key={file.id} className="flex items-center justify-between text-sm py-2 text-gray-400">
+                                <span>{file.file_name}</span>
+                                <button 
+                                  className="text-[#14b8a6] hover:text-white text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setMyDocs(file.content || '');
+                                    setToast({ message: 'File loaded to My Files', type: 'success' });
+                                  }}
+                                >
+                                  Load →
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              className="mt-3 w-full btn-secondary text-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                fileRef.current?.click();
+                              }}
+                            >
+                              + Add File
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1625,26 +1682,100 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
             ) : (
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-gray-400 text-sm">{flashcards.length} cards</span>
-                  <button className="text-[#14b8a6] text-sm hover:text-white" onClick={() => loadContent('flashcards', true)}>
-                    Regenerate
-                  </button>
-                </div>
-                <div className="grid gap-4">
-                  {flashcards.map((fc, i) => (
-                    <div
-                      key={i}
-                      className="bg-[#0f0f14] border border-white/10 rounded-xl p-6 cursor-pointer hover:border-[#14b8a6]/50 transition-colors min-h-[140px] flex items-center justify-center"
-                      onClick={() => setFlipped(f => f.map((v, j) => j === i ? !v : v))}
+                  <div className="flex items-center gap-4">
+                    <span className="text-gray-400 text-sm">{cardIndex + 1} / {flashcards.length}</span>
+                    <span className="text-[#14b8a6] text-sm">{flashcards.length - cardIndex - 1} left</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      className="btn-secondary text-sm"
+                      onClick={() => {
+                        const shuffled = [...flashcards].sort(() => Math.random() - 0.5);
+                        setShuffledCards(shuffled);
+                        setCardIndex(0);
+                        setFlipped(new Array(flashcards.length).fill(false));
+                      }}
                     >
-                      <div className="text-center">
-                        <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">
-                          {flipped[i] ? 'Answer' : 'Question'}
-                        </div>
-                        <div className="text-white font-medium">{flipped[i] ? fc.back : fc.front}</div>
+                      Shuffle
+                    </button>
+                    <button className="text-[#14b8a6] text-sm hover:text-white" onClick={() => loadContent('flashcards', true)}>
+                      New
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Study Mode Card */}
+                <div className="relative">
+                  <div 
+                    className="bg-gradient-to-br from-[#0f0f14] to-[#16161d] border border-white/10 rounded-2xl p-8 cursor-pointer min-h-[250px] flex items-center justify-center transition-all hover:border-[#14b8a6]/50"
+                    onClick={() => setFlipped(f => f.map((v, j) => j === cardIndex ? !v : v))}
+                    style={{ perspective: '1000px' }}
+                  >
+                    <div className="text-center w-full max-w-md">
+                      <div className="text-gray-500 text-xs uppercase tracking-wider mb-4">
+                        {flipped[cardIndex] ? 'ANSWER' : 'QUESTION'}
                       </div>
+                      <div className={`text-white text-xl font-medium transition-all duration-300 ${
+                        flipped[cardIndex] ? 'opacity-100' : 'opacity-100'
+                      }`}>
+                        {flipped[cardIndex] 
+                          ? (shuffledCards[cardIndex] || flashcards[cardIndex])?.back 
+                          : (shuffledCards[cardIndex] || flashcards[cardIndex])?.front}
+                      </div>
+                      <div className="text-gray-600 text-xs mt-6">Click to flip</div>
                     </div>
-                  ))}
+                  </div>
+                  
+                  {/* Navigation */}
+                  <div className="flex items-center justify-between mt-4">
+                    <button 
+                      className="btn-secondary"
+                      onClick={() => setCardIndex(i => Math.max(0, i - 1))}
+                      disabled={cardIndex === 0}
+                    >
+                      ← Previous
+                    </button>
+                    <div className="flex gap-1">
+                      {flashcards.slice(0, 10).map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={`w-2 h-2 rounded-full ${i === cardIndex ? 'bg-[#14b8a6]' : i < cardIndex ? 'bg-[#14b8a6]/50' : 'bg-white/20'}`}
+                        />
+                      ))}
+                      {flashcards.length > 10 && <span className="text-gray-500 text-xs ml-2">...</span>}
+                    </div>
+                    <button 
+                      className="btn-primary"
+                      onClick={() => {
+                        if (cardIndex < flashcards.length - 1) {
+                          setCardIndex(i => i + 1);
+                          setFlipped(f => [...f.slice(0, cardIndex + 1), false, ...f.slice(cardIndex + 2)]);
+                        } else {
+                          setToast({ message: 'Great! You finished all cards!', type: 'success' });
+                        }
+                      }}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+
+                {/* All Cards Grid */}
+                <div className="mt-8 pt-6 border-t border-white/10">
+                  <div className="text-gray-500 text-xs mb-4">ALL CARDS</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {(shuffledCards.length > 0 ? shuffledCards : flashcards).map((fc, i) => (
+                      <div
+                        key={i}
+                        className={`rounded-lg p-3 border transition-colors cursor-pointer ${
+                          i === cardIndex ? 'bg-[#14b8a6]/10 border-[#14b8a6]/50' : 'bg-white/5 border-white/10 hover:border-white/20'
+                        }`}
+                        onClick={() => setCardIndex(i)}
+                      >
+                        <div className="text-gray-400 text-xs truncate">{fc.front}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </>
             )}
@@ -1686,9 +1817,16 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
             ) : (
               <>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-gray-400 text-sm">{quiz.length} questions • {quizDifficulty}</span>
+                  <div className="flex items-center gap-4">
+                    <span className="text-gray-400 text-sm">{quiz.length} questions • {quizDifficulty}</span>
+                    {answers.length === quiz.length && answers.length > 0 && (
+                      <span className="text-emerald-400 text-sm font-medium">
+                        Score: {answers.filter((a, i) => a === quiz[i].correct).length}/{quiz.length}
+                      </span>
+                    )}
+                  </div>
                   <button className="text-[#14b8a6] text-sm hover:text-white" onClick={() => loadContent('quiz', true)}>
-                    Regenerate
+                    New Quiz
                   </button>
                 </div>
                 {quiz.map((q, qi) => (
