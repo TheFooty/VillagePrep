@@ -36,13 +36,15 @@ export async function POST(req: NextRequest) {
     : `${systemPrompt}\n\n${userMessage}`;
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
-      return NextResponse.json({ error: 'No API key configured. Add GEMINI_API_KEY to Vercel env vars.' }, { status: 500 });
+      return NextResponse.json({ error: 'No API key. Add GEMINI_API_KEY to Vercel.' }, { status: 500 });
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -56,20 +58,21 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     
+    console.log('Gemini response:', JSON.stringify(data).slice(0, 500));
+    
     if (!response.ok) {
-      console.error('Gemini error:', JSON.stringify(data).slice(0, 500));
       return NextResponse.json({ error: data.error?.message || 'AI failed', status: 500 });
     }
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     
     if (!text) {
-      return NextResponse.json({ error: 'Empty response from AI', status: 500 });
+      return NextResponse.json({ error: 'Empty response', status: 500 });
     }
 
     return NextResponse.json({ text });
   } catch (err: any) {
     console.error('AI error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to connect to AI' }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

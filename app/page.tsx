@@ -1315,6 +1315,13 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                             const res = await fetch(`/api/study-set-files?studySetId=${set.id}`);
                             const data = await res.json();
                             setStudySetFiles(data.files || []);
+                            // Auto-load first file content for studying
+                            if (data.files && data.files.length > 0) {
+                              setMyDocs(data.files[0].content || '');
+                              setSelectedClass({ id: 'study-set-' + set.id, name: set.title, content: data.files[0].content || '', testDate: '', teacherEmail: user.email });
+                              setTab('notes');
+                              setToast({ message: 'Study set loaded!', type: 'success' });
+                            }
                           }
                         }}
                       >
