@@ -50,31 +50,31 @@ export async function POST(req: NextRequest) {
         'X-Title': 'VillagePrep',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-001',
+        model: 'anthropic/claude-3-haiku-20240307',
         messages: apiMessages,
         max_tokens: type === 'notes' ? 3000 : 1500,
       }),
     });
 
-    const data = await response.json();
+const data = await response.json();
+    console.log('AI response status:', response.status);
+    console.log('AI response data:', JSON.stringify(data).slice(0, 500));
     
-    console.log('OpenRouter response status:', response.status);
-    console.log('OpenRouter response data:', JSON.stringify(data));
+    if (!response.ok) {
+      return NextResponse.json({ error: data.error?.message || `HTTP ${response.status}` }, { status: response.status });
+    }
     
     if (data.error) {
-      console.error('OpenRouter error:', data.error);
-      return NextResponse.json({ error: data.error.message || 'AI error' }, { status: 500 });
+      return NextResponse.json({ error: data.error.message }, { status: 500 });
     }
     
-    if (!data.choices || !data.choices[0]) {
-      console.error('No choices in response:', data);
-      return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
+    const text = data.choices?.[0]?.message?.content;
+    if (!text) {
+      return NextResponse.json({ error: 'Empty response from AI' }, { status: 500 });
     }
-    
-    const text = data.choices[0].message?.content || 'Something went wrong. Please try again.';
     return NextResponse.json({ text });
-  } catch (err) {
-    console.error('AI route catch error:', err);
-    return NextResponse.json({ text: 'Error connecting to AI. Please try again.' }, { status: 500 });
+} catch (err: any) {
+    console.error('AI error:', err);
+    return NextResponse.json({ error: err.message || 'Failed to connect to AI' }, { status: 500 });
   }
 }
