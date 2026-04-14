@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Readable } from 'stream';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,10 +28,8 @@ export async function POST(req: NextRequest) {
     let extractedText = '';
 
     if (fileName.endsWith('.pdf')) {
-      const pdfjs = await import('pdfjs-dist');
-      
-      // Use the built-in worker from the package
-      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      // Use legacy build which includes the worker
+      const pdfjs = await import('pdfjs-dist/legacy/build/pdf');
       
       const loadingTask = pdfjs.getDocument({ data: uint8Array });
       const pdfDocument = await loadingTask.promise;
