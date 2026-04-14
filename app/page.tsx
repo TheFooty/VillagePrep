@@ -159,7 +159,22 @@ async function getYouTubeTranscript(url: string): Promise<string> {
 }
 
 function Spinner() {
-  return <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />;
+  return (
+    <div className="w-5 h-5 relative">
+      <div className="absolute inset-0 rounded-full border-2 border-white/20" />
+      <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-[#14b8a6] animate-spin" />
+    </div>
+  );
+}
+
+function LoadingDots() {
+  return (
+    <div className="flex gap-1">
+      <span className="w-2 h-2 bg-[#14b8a6] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+      <span className="w-2 h-2 bg-[#14b8a6] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+      <span className="w-2 h-2 bg-[#14b8a6] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+    </div>
+  );
 }
 
 function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
