@@ -32,13 +32,13 @@ interface QuizQuestion {
   explanation: string;
 }
 
-async function parsePdf(file: File): Promise<string> {
+async function parseFile(file: File): Promise<string> {
   const fd = new FormData();
   fd.append('file', file);
   const res = await fetch('/api/parse-pdf', { method: 'POST', body: fd });
   const data = await res.json().catch(() => ({ error: 'Invalid parser response' }));
   if (!res.ok || data.error) {
-    throw new Error(data.error || `PDF parser failed (${res.status})`);
+    throw new Error(data.error || `File parser failed (${res.status})`);
   }
   return data.text as string;
 }
@@ -204,10 +204,10 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
     if (!file) return;
     setPdfLoading(true);
     try {
-      const text = await parsePdf(file);
+      const text = await parseFile(file);
       setContent(prev => prev ? prev + '\n\n' + text : text);
     } catch (err: any) {
-      alert(err.message || 'Could not read PDF. Try pasting text instead.');
+      alert(err.message || 'Could not read file. Try pasting text instead.');
     } finally {
       setPdfLoading(false);
     }
@@ -290,11 +290,11 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    Upload PDF
+                    Upload File
                   </>
                 )}
               </button>
-              <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
+              <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx" className="hidden" onChange={handlePdf} />
             </div>
 
             <textarea
@@ -402,7 +402,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     if (!file) return;
     setPdfLoading(true);
     try {
-      const text = await parsePdf(file);
+      const text = await parseFile(file);
       setMyDocs(prev => prev ? prev + '\n\n' + text : text);
     } catch (err: any) {
       alert(err.message || 'Could not read that PDF.');
@@ -537,7 +537,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    Upload PDF
+                    Upload File
                   </>
                 )}
               </button>
@@ -553,7 +553,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
             {myDocs && (
               <p className="mt-3 text-emerald-400 text-sm">{myDocs.length.toLocaleString()} characters loaded</p>
             )}
-            <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
+            <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx" className="hidden" onChange={handlePdf} />
           </div>
 
           <h3 className="text-xl font-bold text-white mb-4">Available Classes</h3>
@@ -640,7 +640,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           >
             {pdfLoading ? 'Loading...' : '+ Notes'}
           </button>
-          <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
+          <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx" className="hidden" onChange={handlePdf} />
           <button onClick={onLogout} className="text-white/60 hover:text-white text-sm transition-colors">
             Sign out
           </button>
