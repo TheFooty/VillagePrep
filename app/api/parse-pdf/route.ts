@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Readable } from 'stream';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,16 +24,16 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Convert to Uint8Array instead of Buffer
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     let extractedText = '';
 
     if (fileName.endsWith('.pdf')) {
       const pdfjs = await import('pdfjs-dist');
-      if (typeof window === 'undefined') {
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
-      }
+      
+      // Use the built-in worker from the package
+      pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+      
       const loadingTask = pdfjs.getDocument({ data: uint8Array });
       const pdfDocument = await loadingTask.promise;
 
