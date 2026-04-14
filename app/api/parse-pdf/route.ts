@@ -27,16 +27,41 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
     let extractedText = '';
 
-    if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
+    if (fileName.endsWith('.pdf')) {
+      // Try pdf2json with callback-based approach
+      const fs = await import('fs');
+      const { PDFParser } = await import('pdf2json');
+      
+      const tempPath = '/tmp/temp.pdf';
+      fs.writeFileSync(tempPath, buffer);
+      
+      const parser: any = new PDFParser();
+      
+      // Use promise wrapper for callback-based API
+      const pdfData: any = await new Promise((resolve, reject) => {
+        parser.on('pdfReady', (pdf: any) => resolve(pdf));
+        parser.on('error', (err: Error) => reject(err));
+        parser.loadFile(tempPath);
+      });
+      
+      if (pdfData && pdfData.Pages) {
+        for (const page of pdfData.Pages) {
+          if (page.Texts) {
+            for (const textItem of page.Texts) {
+              extractedText += decodeURIComponent(textItem.str || '') + ' ';
+            }
+          }
+          extractedText += '\n';
+        }
+      }
+      
+      try { fs.unlinkSync(tempPath); } catch {}
+    } else if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
       extractedText = buffer.toString('utf-8');
     } else if (fileName.endsWith('.docx')) {
       const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value;
-    } else if (fileName.endsWith('.pdf')) {
-      return NextResponse.json({ 
-        error: 'PDF parsing is currently unavailable. Please convert your PDF to text or use a different format (TXT, MD, DOCX).' 
-      }, { status: 400 });
     }
 
     if (!extractedText || !extractedText.trim()) {
