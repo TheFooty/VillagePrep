@@ -2,6 +2,40 @@
 
 import { useState, useRef, useEffect } from 'react';
 
+function parseMarkdown(text: string): string {
+  if (!text) return '';
+  let html = text;
+  
+  html = html.replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold text-white mt-6 mb-2">$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold text-white mt-8 mb-3">$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold text-[#14b8a6] mt-8 mb-4">$1</h1>');
+  
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em class="text-gray-300">$1</em>');
+  
+  html = html.replace(/^\* (.+)$/gm, '<li class="text-gray-300 ml-4">$1</li>');
+  html = html.replace(/^- (.+)$/gm, '<li class="text-gray-300 ml-4">$1</li>');
+  
+  html = html.replace(/\|([^|]+)\|([^|]+)\|([^|]+)\|/g, '<td class="border border-white/20 px-3 py-2 text-gray-300">$1</td>');
+  html = html.replace(/\|([^|]+)\|/g, '<th class="border border-white/20 bg-white/5 px-3 py-2 text-white font-semibold">$1</th>');
+  
+  html = html.replace(/```[\s\S]*?```/g, '');
+  
+  html = html.replace(/\n\n/g, '</p><p class="text-gray-300 mb-3">');
+  html = html.replace(/\n/g, '<br/>');
+  
+  return `<div class="text-sm">${html}</div>`;
+}
+
+function MarkdownRenderer({ content }: { content: string }) {
+  return (
+    <div 
+      className="text-sm text-gray-200 leading-relaxed"
+      dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
+    />
+  );
+}
+
 interface User {
   email: string;
   role: 'teacher' | 'student';
@@ -1088,8 +1122,8 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                 <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('notes')}>
                   Regenerate Notes
                 </button>
-                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6">
-                  <pre className="text-white text-sm whitespace-pre-wrap font-sans">{notes}</pre>
+                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6 overflow-auto">
+                  <MarkdownRenderer content={notes} />
                 </div>
               </>
             ) : (
@@ -1112,8 +1146,8 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                 <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('summary')}>
                   Regenerate Summary
                 </button>
-                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6">
-                  <pre className="text-white text-sm whitespace-pre-wrap">{summary}</pre>
+                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6 overflow-auto">
+                  <MarkdownRenderer content={summary} />
                 </div>
               </>
             ) : (
