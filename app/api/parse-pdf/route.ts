@@ -27,16 +27,16 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
     let extractedText = '';
 
-    if (fileName.endsWith('.pdf')) {
-      const { PDFParse } = await import('pdf-parse');
-      const data: any = await new PDFParse(buffer);
-      extractedText = data.text;
-    } else if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
+    if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
       extractedText = buffer.toString('utf-8');
     } else if (fileName.endsWith('.docx')) {
       const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value;
+    } else if (fileName.endsWith('.pdf')) {
+      return NextResponse.json({ 
+        error: 'PDF parsing is currently unavailable. Please convert your PDF to text or use a different format (TXT, MD, DOCX).' 
+      }, { status: 400 });
     }
 
     if (!extractedText || !extractedText.trim()) {
