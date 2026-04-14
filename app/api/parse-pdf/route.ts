@@ -24,34 +24,22 @@ export async function POST(req: NextRequest) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
+    const buffer = Buffer.from(arrayBuffer);
     let extractedText = '';
 
     if (fileName.endsWith('.pdf')) {
-      // Use legacy build which includes the worker
-      const pdfjs = await import('pdfjs-dist/legacy/build/pdf');
-      
-      const loadingTask = pdfjs.getDocument({ data: uint8Array });
-      const pdfDocument = await loadingTask.promise;
-
-      for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum += 1) {
-        const page = await pdfDocument.getPage(pageNum);
-        const content = await page.getTextContent();
-        const pageText = content.items
-          .map((item: any) => ('str' in item ? item.str : ''))
-          .join(' ');
-        extractedText += pageText + '\n\n';
-      }
+      const { PDFParse } = await import('pdf-parse');
+      const data: any = await new PDFParse(buffer);
+      extractedText = data.text;
     } else if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
-      const decoder = new TextDecoder('utf-8');
-      extractedText = decoder.decode(uint8Array);
+      extractedText = buffer.toString('utf-8');
     } else if (fileName.endsWith('.docx')) {
       const mammoth = await import('mammoth');
-      const result = await mammoth.extractRawText({ buffer: Buffer.from(uint8Array) });
+      const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value;
     }
 
-    if (!extractedText.trim()) {
+    if (!extractedText || !extractedText.trim()) {
       return NextResponse.json({ error: 'No text could be extracted from the file.' }, { status: 400 });
     }
 
