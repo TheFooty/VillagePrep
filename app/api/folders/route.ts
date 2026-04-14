@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await supabase
     .from('folders')
     .insert([{ 
+      id: crypto.randomUUID(),
       email, 
       name, 
       color: color || '#e94560',

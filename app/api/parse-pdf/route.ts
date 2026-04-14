@@ -23,7 +23,9 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // Convert to Uint8Array instead of Buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
     let extractedText = '';
 
     if (fileName.endsWith('.pdf')) {
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
       if (typeof window === 'undefined') {
         pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
       }
-      const loadingTask = pdfjs.getDocument({ data: buffer });
+      const loadingTask = pdfjs.getDocument({ data: uint8Array });
       const pdfDocument = await loadingTask.promise;
 
       for (let pageNum = 1; pageNum <= pdfDocument.numPages; pageNum += 1) {
@@ -43,10 +45,11 @@ export async function POST(req: NextRequest) {
         extractedText += pageText + '\n\n';
       }
     } else if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
-      extractedText = buffer.toString('utf-8');
+      const decoder = new TextDecoder('utf-8');
+      extractedText = decoder.decode(uint8Array);
     } else if (fileName.endsWith('.docx')) {
       const mammoth = await import('mammoth');
-      const result = await mammoth.extractRawText({ buffer });
+      const result = await mammoth.extractRawText({ buffer: Buffer.from(uint8Array) });
       extractedText = result.value;
     }
 
