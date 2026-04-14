@@ -2,6 +2,34 @@
 
 import { useState, useRef, useEffect } from 'react';
 
+const STORAGE_KEY = 'villageprep_data';
+
+interface StoredData {
+  myDocs: string;
+  classNotes: Record<string, string>;
+  messages: Message[];
+  selectedClassId: string | null;
+  enrolledClasses: string[];
+}
+
+function saveToStorage(data: StoredData) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error('Failed to save:', e);
+  }
+}
+
+function loadFromStorage(): StoredData | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    console.error('Failed to load:', e);
+    return null;
+  }
+}
+
 function parseMarkdown(text: string): string {
   if (!text) return '';
   let html = text;
@@ -696,6 +724,13 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   const chatBottom = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const stored = loadFromStorage();
+    if (stored) {
+      if (stored.myDocs) setMyDocs(stored.myDocs);
+      if (stored.classNotes) setClassNotes(stored.classNotes);
+      if (stored.messages) setMessages(stored.messages);
+      if (stored.enrolledClasses) setEnrolledClasses(stored.enrolledClasses);
+    }
     fetch('/api/classes').then(r => r.json()).then(setClasses);
     fetch(`/api/folders?email=${encodeURIComponent(user.email)}`)
       .then(r => r.json())
@@ -703,14 +738,18 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     fetch(`/api/enroll?email=${encodeURIComponent(user.email)}`)
       .then(r => r.json())
       .then(data => {
-        setEnrolledClasses(data.classes || []);
-        data.classes.forEach((classId: string) => {
+        setEnrolledClasses(prev => stored?.enrolledClasses || data.classes || []);
+        (data.classes || []).forEach((classId: string) => {
           fetch(`/api/notes?email=${encodeURIComponent(user.email)}&classId=${encodeURIComponent(classId)}`)
             .then(r => r.json())
             .then(data => setClassNotes(prev => ({ ...prev, [classId]: data.notes || '' })));
         });
       });
   }, [user.email]);
+
+  useEffect(() => {
+    saveToStorage({ myDocs, classNotes, messages, enrolledClasses, selectedClassId: selectedClass?.id || null });
+  }, [myDocs, classNotes, messages, enrolledClasses, selectedClass]);
 
   useEffect(() => {
     chatBottom.current?.scrollIntoView({ behavior: 'smooth' });
