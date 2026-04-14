@@ -184,6 +184,26 @@ function LoadingDots() {
   );
 }
 
+function Toast({ message, type = 'info', onClose }: { message: string; type?: 'success' | 'error' | 'info'; onClose?: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(() => onClose?.(), 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const colors = {
+    success: 'bg-emerald-500/90 border-emerald-400',
+    error: 'bg-red-500/90 border-red-400',
+    info: 'bg-[#14b8a6]/90 border-[#14b8a6]',
+  };
+
+  return (
+    <div className={`fixed bottom-4 right-4 z-50 animate-slide-in ${colors[type]} border rounded-xl px-4 py-3 shadow-2xl flex items-center gap-3`}>
+      <span className="text-white text-sm font-medium">{message}</span>
+      <button onClick={onClose} className="text-white/70 hover:text-white">✕</button>
+    </div>
+  );
+}
+
 function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -572,7 +592,7 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
       const text = await parseFile(file);
       setContent(prev => prev ? prev + '\n\n' + text : text);
     } catch (err: any) {
-      alert(err.message || 'Could not read file.');
+      setToast({ message: err.message || 'Could not read file', type: 'error' });
     } finally {
       setFileLoading(false);
     }
@@ -586,7 +606,7 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
       const text = await getYouTubeTranscript(url);
       setContent(prev => prev ? prev + '\n\n--- YOUTUBE TRANSCRIPT ---\n' + text : text);
     } catch (err: any) {
-      alert(err.message || 'Could not get transcript.');
+      setToast({ message: err.message || 'Could not get transcript', type: 'error' });
     } finally {
       setYtLoading(false);
     }
@@ -760,9 +780,13 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   const [notes, setNotes] = useState('');
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [flipped, setFlipped] = useState<boolean[]>([]);
+  const [cardIndex, setCardIndex] = useState(0);
+  const [shuffledCards, setShuffledCards] = useState<Flashcard[]>([]);
+  const [quizScore, setQuizScore] = useState<{ date: string; score: number; total: number }[]>([]);
   const [flashcardCount, setFlashcardCount] = useState<5 | 10 | 20>(10);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -830,6 +854,29 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     chatBottom.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          e.preventDefault();
+          if (input.trim()) sendChat();
+        }
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (selectedClass) setSelectedClass(null);
+        if (selectedStudySet) setSelectedStudySet(null);
+      }
+      const tabs: StudyTab[] = ['notes', 'chat', 'flashcards', 'quiz', 'studyplan', 'podcast', 'summary'];
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 7) {
+        setTab(tabs[num - 1]);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [input, selectedClass, selectedStudySet]);
+
   const combinedContent = [
     selectedClass?.content || '',
     myDocs ? `\n\n--- MY NOTES ---\n${myDocs}` : '',
@@ -871,7 +918,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         });
       }
     } catch (err: any) {
-      alert(err.message || 'Could not read file.');
+      setToast({ message: err.message || 'Could not read file', type: 'error' });
     } finally {
       setFileLoading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -886,7 +933,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
       const text = await getYouTubeTranscript(url);
       setMyDocs(prev => prev ? prev + '\n\n--- YOUTUBE TRANSCRIPT ---\n' + text : text);
     } catch (err: any) {
-      alert(err.message || 'Could not get transcript.');
+      setToast({ message: err.message || 'Could not get transcript', type: 'error' });
     } finally {
       setYtLoading(false);
     }
@@ -910,12 +957,12 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
       });
       const data = await res.json();
       if (!res.ok || data.error) {
-        alert(data.error || data.text || 'Something went wrong. Please try again.');
+        setToast({ message: data.error || data.text || 'Something went wrong', type: 'error' });
         return null;
       }
       return data.text as string;
     } catch (err: any) {
-      alert(err.message || 'Failed to connect to AI');
+      setToast({ message: err.message || 'Failed to connect to AI', type: 'error' });
       return null;
     } finally {
       setAiLoading(false);
@@ -974,7 +1021,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     });
     const data = await res.json();
     if (data.error) {
-      alert(data.error);
+      setToast({ message: data.error, type: 'error' });
       return;
     }
     if (data.folder) {
