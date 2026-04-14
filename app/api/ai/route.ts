@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         'X-Title': 'VillagePrep',
       },
       body: JSON.stringify({
-        model: 'ai21/jamba-1.5-mini',
+        model: 'openrouter/free',
         messages: apiMessages,
         max_tokens: type === 'notes' ? 3000 : 1500,
       }),
@@ -58,9 +58,8 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     console.log('AI response status:', response.status);
-    console.log('AI response data:', JSON.stringify(data).slice(0, 500));
-    
     if (!response.ok) {
+      console.log('AI error response:', JSON.stringify(data).slice(0, 300));
       return NextResponse.json({ error: data.error?.message || `HTTP ${response.status}` }, { status: response.status });
     }
     
