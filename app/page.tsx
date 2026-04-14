@@ -970,7 +970,14 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
 
   if (!selectedClass) {
     return (
-      <div className="min-h-screen bg-[#0a0a0f]">
+      <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
+        {/* Animated background */}
+        <div className="fixed inset-0 pointer-events-none">
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] rounded-full opacity-10 blur-[80px]" style={{ background: '#14b8a6' }} />
+          <div className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] rounded-full opacity-10 blur-[100px]" style={{ background: '#6366f1' }} />
+          <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] rounded-full opacity-5 blur-[100px]" style={{ background: '#14b8a6', transform: 'translate(-50%, -50%)' }} />
+        </div>
+        
         <header className="sticky top-0 z-40 bg-[#0a0a0f]/90 backdrop-blur-xl border-b border-white/5 px-6 py-4">
           <div className="flex items-center justify-between max-w-6xl mx-auto">
             <div className="flex items-center gap-3">
@@ -990,7 +997,39 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           </div>
         </header>
 
-        <main className="max-w-6xl mx-auto px-6 py-8">
+        <main className="relative max-w-6xl mx-auto px-6 py-8">
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold mb-2">
+              Welcome back, <span className="text-[#14b8a6]">{user.email.split('@')[0]}</span>
+            </h1>
+            <p className="text-gray-400">Ready to study? Upload materials or choose a class.</p>
+          </div>
+          
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+              { label: 'Classes', value: classes.length, icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
+              { label: 'Enrolled', value: enrolledClasses.length, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
+              { label: 'Folders', value: folders.length, icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
+              { label: 'Study Hours', value: '-', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+            ].map((stat, i) => (
+              <div key={i} className="bg-gradient-to-br from-[#0f0f14] to-[#16161d] rounded-xl p-4 border border-white/5 hover:border-[#14b8a6]/30 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-[#14b8a6]/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-[#14b8a6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-white">{stat.value}</div>
+                    <div className="text-xs text-gray-500">{stat.label}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
               <div className="bg-gradient-to-br from-[#0f0f14] to-[#16161d] rounded-2xl p-6 border border-white/5 shadow-2xl shadow-black/20">
