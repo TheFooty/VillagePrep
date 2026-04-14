@@ -12,6 +12,29 @@ interface StoredData {
   enrolledClasses: string[];
 }
 
+async function saveToCloud(email: string, type: string, content: string) {
+  try {
+    await fetch('/api/user-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, type, content }),
+    });
+  } catch (e) {
+    console.error('Failed to save to cloud:', e);
+  }
+}
+
+async function loadFromCloud(email: string, type: string): Promise<string> {
+  try {
+    const res = await fetch(`/api/user-data?email=${encodeURIComponent(email)}&type=${type}`);
+    const data = await res.json();
+    return data.content || '';
+  } catch (e) {
+    console.error('Failed to load from cloud:', e);
+    return '';
+  }
+}
+
 function saveToStorage(data: StoredData) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -748,8 +771,25 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   }, [user.email]);
 
   useEffect(() => {
+    const sync = async () => {
+      const stored = loadFromStorage();
+      const cloudDocs = await loadFromCloud(user.email, 'files');
+      setMyDocs(cloudDocs || stored?.myDocs || '');
+      
+      const cloudMessages = await loadFromCloud(user.email, 'chat');
+      if (cloudMessages) {
+        try { setMessages(JSON.parse(cloudMessages)); } 
+        catch { setMessages(stored?.messages || []); }
+      }
+    };
+    sync();
+  }, [user.email]);
+
+  useEffect(() => {
     saveToStorage({ myDocs, classNotes, messages, enrolledClasses, selectedClassId: selectedClass?.id || null });
-  }, [myDocs, classNotes, messages, enrolledClasses, selectedClass]);
+    saveToCloud(user.email, 'files', myDocs);
+    saveToCloud(user.email, 'chat', JSON.stringify(messages));
+  }, [myDocs, messages, enrolledClasses, selectedClass]);
 
   useEffect(() => {
     chatBottom.current?.scrollIntoView({ behavior: 'smooth' });
@@ -901,39 +941,41 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   if (!selectedClass) {
     return (
       <div className="min-h-screen bg-[#0a0a0f]">
-        <header className="bg-[#0f0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-              </svg>
+        <header className="sticky top-0 z-40 bg-[#0a0a0f]/90 backdrop-blur-xl border-b border-white/5 px-6 py-4">
+          <div className="flex items-center justify-between max-w-6xl mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center shadow-lg shadow-[#14b8a6]/20">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">VillagePrep</span>
             </div>
-            <span className="text-xl font-bold">VillagePrep</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-gray-400 text-sm hidden sm:inline">{user.email}</span>
-            <button onClick={onLogout} className="text-gray-400 hover:text-white text-sm transition-colors">
-              Sign out
-            </button>
+            <div className="flex items-center gap-4">
+              <span className="text-gray-500 text-sm hidden sm:inline">{user.email}</span>
+              <button onClick={onLogout} className="text-gray-500 hover:text-white text-sm transition-all hover:bg-white/5 px-3 py-2 rounded-lg">
+                Sign out
+              </button>
+            </div>
           </div>
         </header>
 
-        <main className="max-w-5xl mx-auto px-6 py-8">
+        <main className="max-w-6xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-[#0f0f14] rounded-2xl p-6 border border-white/10">
+              <div className="bg-gradient-to-br from-[#0f0f14] to-[#16161d] rounded-2xl p-6 border border-white/5 shadow-2xl shadow-black/20">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-white">My Study Materials</h3>
                   <div className="flex gap-2">
                     <button
-                      className="bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm transition-colors"
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm transition-all"
                       onClick={() => fileRef.current?.click()}
                       disabled={fileLoading}
                     >
                       {fileLoading ? 'Loading...' : '+ File'}
                     </button>
                     <button
-                      className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-lg px-3 py-1.5 text-sm transition-colors"
+                      className="bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:shadow-lg hover:shadow-[#14b8a6]/20 text-white rounded-lg px-3 py-1.5 text-sm transition-all"
                       onClick={handleYouTube}
                       disabled={ytLoading}
                     >
@@ -943,10 +985,13 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                 </div>
                 {myDocs ? (
                   <div>
-                    <p className="text-emerald-400 text-sm mb-3">{myDocs.length.toLocaleString()} characters loaded</p>
+                    <p className="text-emerald-400 text-sm mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      {myDocs.length.toLocaleString()} characters loaded
+                    </p>
                     <div className="flex gap-2">
                       <button
-                        className="flex-1 bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-lg py-2 text-sm"
+                        className="flex-1 bg-gradient-to-r from-[#14b8a6] to-[#0d9488] hover:shadow-lg hover:shadow-[#14b8a6]/20 text-white rounded-lg py-2 text-sm transition-all"
                         onClick={() => {
                           setSelectedClass({ id: 'my-files', name: 'My Files', content: myDocs, testDate: '', teacherEmail: user.email });
                           setMessages([]);
@@ -968,11 +1013,11 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                 <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png" className="hidden" onChange={handleFile} />
               </div>
 
-              <div className="bg-[#0f0f14] rounded-2xl p-6 border border-white/10">
+              <div className="bg-gradient-to-br from-[#0f0f14] to-[#16161d] rounded-2xl p-6 border border-white/5 shadow-xl shadow-black/10">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-white">Folders</h3>
                   <button
-                    className="text-[#14b8a6] text-sm hover:text-[#0d9488]"
+                    className="text-[#14b8a6] text-sm hover:text-[#0d9488] transition-all hover:bg-[#14b8a6]/10 px-3 py-1 rounded-lg"
                     onClick={() => setShowFolderModal(true)}
                   >
                     + New Folder
@@ -1001,10 +1046,10 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                 {classes.length > 0 ? (
                   <div className="grid gap-4">
                     {classes.map(c => (
-                      <div key={c.id} className="bg-[#0f0f14] rounded-xl p-5 border border-white/10 hover:border-[#14b8a6]/50 transition-colors">
+                      <div key={c.id} className="group bg-gradient-to-br from-[#0f0f14] to-[#16161d] rounded-2xl p-5 border border-white/5 hover:border-[#14b8a6]/50 transition-all hover:shadow-xl hover:shadow-[#14b8a6]/5">
                         <div className="flex items-start justify-between mb-3">
                           <div>
-                            <div className="font-semibold text-white text-lg">{c.name}</div>
+                            <div className="font-semibold text-white text-lg group-hover:text-[#14b8a6] transition-colors">{c.name}</div>
                             <div className="text-gray-500 text-sm">by {c.teacherEmail.split('@')[0]}</div>
                           </div>
                           <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
