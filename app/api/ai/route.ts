@@ -50,13 +50,13 @@ export async function POST(req: NextRequest) {
         'X-Title': 'VillagePrep',
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-3-haiku-20240307',
+        model: 'ai21/jamba-1.5-mini',
         messages: apiMessages,
         max_tokens: type === 'notes' ? 3000 : 1500,
       }),
     });
 
-const data = await response.json();
+    const data = await response.json();
     console.log('AI response status:', response.status);
     console.log('AI response data:', JSON.stringify(data).slice(0, 500));
     
