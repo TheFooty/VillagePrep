@@ -2,8 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 interface User {
   email: string;
   role: 'teacher' | 'student';
@@ -34,8 +32,6 @@ interface QuizQuestion {
   explanation: string;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 async function parsePdf(file: File): Promise<string> {
   const fd = new FormData();
   fd.append('file', file);
@@ -47,20 +43,11 @@ async function parsePdf(file: File): Promise<string> {
   return data.text as string;
 }
 
-// ─── Loading Spinner Component ────────────────────────────────────────────────
-
-function Spinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
-  const sizeClasses = {
-    sm: 'w-4 h-4',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8',
-  };
+function Spinner() {
   return (
-    <div className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-gray-300 border-t-blue-600`} />
+    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
   );
 }
-
-// ─── Login Screen ─────────────────────────────────────────────────────────────
 
 function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
   const [email, setEmail] = useState('');
@@ -113,95 +100,90 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 font-sans">
-      <div className="bg-white rounded-3xl p-8 sm:p-10 w-full max-w-[420px] shadow-2xl">
-        <div className="text-3xl font-extrabold mb-2 tracking-tight">
-          <span className="text-blue-600">V</span>
-          <span className="text-slate-900">illagPrep</span>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[#1a1a2e]">
+        <div className="absolute top-20 left-10 w-72 h-72 bg-[#e94560]/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#0f3460]/30 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#e94560]/5 rounded-full blur-3xl" />
+      </div>
+      
+      <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl p-10 w-full max-w-[440px] border border-white/20 shadow-2xl">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#e94560] rounded-2xl mb-4 shadow-lg">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2">
+            <span className="text-[#e94560]">Village</span>Prep
+          </h1>
+          <p className="text-white/60 text-sm">Your smart study companion</p>
         </div>
-        <p className="text-slate-500 text-sm mt-1 mb-7">
-          {step === 'email'
-            ? 'Sign in with your Village School email'
-            : `Code sent to ${email} — check your inbox`}
-        </p>
 
-        {step === 'email' ? (
-          <>
-            <input
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans"
-              type="email"
-              placeholder="you@thevillageschool.com"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendCode()}
-              aria-label="Email address"
-            />
-            <button
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-3.5 text-sm font-semibold cursor-pointer transition-colors mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              onClick={sendCode}
-              disabled={loading || !email}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Spinner size="sm" /> Sending…
-                </span>
-              ) : (
-                'Send Code →'
-              )}
-            </button>
-          </>
-        ) : (
-          <>
-            <input
-              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans"
-              type="text"
-              placeholder="6-digit code"
-              value={code}
-              maxLength={6}
-              onChange={e => setCode(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && verifyCode()}
-              autoFocus
-              aria-label="6-digit verification code"
-            />
-            <button
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-3.5 text-sm font-semibold cursor-pointer transition-colors mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              onClick={verifyCode}
-              disabled={loading || code.length < 6}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Spinner size="sm" /> Verifying…
-                </span>
-              ) : (
-                'Sign In →'
-              )}
-            </button>
-            <button
-              className="w-full bg-transparent text-slate-500 hover:text-slate-700 rounded-xl py-2.5 text-sm font-medium cursor-pointer transition-colors mt-2 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
-              onClick={() => { setStep('email'); setCode(''); setError(''); }}
-            >
-              ← Back
-            </button>
-          </>
-        )}
+        <div className="space-y-4">
+          {step === 'email' ? (
+            <>
+              <input
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-4 text-white placeholder-white/40 outline-none focus:border-[#e94560] transition-colors"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendCode()}
+              />
+              <button
+                className="w-full bg-[#e94560] hover:bg-[#d63d56] disabled:bg-[#e94560]/50 text-white rounded-xl py-4 font-semibold transition-colors flex items-center justify-center gap-2"
+                onClick={sendCode}
+                disabled={loading || !email}
+              >
+                {loading ? <Spinner /> : 'Get Started'}
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="text-center mb-4">
+                <p className="text-white/60 text-sm">Enter the code sent to</p>
+                <p className="text-white font-medium">{email}</p>
+              </div>
+              <input
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-4 text-white text-center text-2xl letter-spacing-[0.5em] placeholder-white/30 outline-none focus:border-[#e94560] transition-colors"
+                type="text"
+                placeholder="000000"
+                value={code}
+                maxLength={6}
+                onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+                onKeyDown={e => e.key === 'Enter' && verifyCode()}
+              />
+              <button
+                className="w-full bg-[#e94560] hover:bg-[#d63d56] disabled:bg-[#e94560]/50 text-white rounded-xl py-4 font-semibold transition-colors flex items-center justify-center gap-2"
+                onClick={verifyCode}
+                disabled={loading || code.length < 6}
+              >
+                {loading ? <Spinner /> : 'Verify'}
+              </button>
+              <button
+                className="w-full text-white/50 hover:text-white text-sm transition-colors"
+                onClick={() => { setStep('email'); setCode(''); setError(''); }}
+              >
+                ← Change email
+              </button>
+            </>
+          )}
 
-        {error && (
-          <p className="text-red-500 text-sm mt-2.5" role="alert">
-            {error}
-          </p>
-        )}
+          {error && (
+            <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg py-2">{error}</p>
+          )}
 
-        {role && (
-          <p className="mt-3 text-sm text-green-600 bg-green-50 rounded-lg py-2 px-3 text-center">
-            {role === 'teacher' ? '🎓 Teacher account detected' : '📚 Student account detected'}
-          </p>
-        )}
+          {role && (
+            <p className="text-center text-emerald-400 text-sm bg-emerald-500/10 rounded-lg py-2">
+              {role === 'teacher' ? 'Teacher account detected' : 'Student account detected'}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-// ─── Teacher Portal ───────────────────────────────────────────────────────────
 
 function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [classes, setClasses] = useState<VPClass[]>([]);
@@ -224,8 +206,8 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
     try {
       const text = await parsePdf(file);
       setContent(prev => prev ? prev + '\n\n' + text : text);
-    } catch {
-      alert('Could not read PDF. Try pasting text instead.');
+    } catch (err: any) {
+      alert(err.message || 'Could not read PDF. Try pasting text instead.');
     } finally {
       setPdfLoading(false);
     }
@@ -258,106 +240,117 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
   const myClasses = classes.filter(c => c.teacherEmail === user.email);
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-7 py-4 flex items-center justify-between sticky top-0 z-50">
-        <span className="text-lg font-extrabold text-slate-900 tracking-tight">VillagePrep</span>
+    <div className="min-h-screen bg-[#1a1a2e]">
+      <header className="bg-[#16213e] border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-xs text-slate-500 hidden sm:inline">{user.email}</span>
+          <div className="w-10 h-10 bg-[#e94560] rounded-xl flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <span className="text-xl font-bold text-white">VillagePrep</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-white/60 text-sm hidden sm:inline">{user.email}</span>
           <button
             onClick={onLogout}
-            className="bg-transparent border border-gray-200 hover:bg-slate-50 text-slate-600 rounded-lg px-3.5 py-1.5 text-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Sign out"
+            className="text-white/60 hover:text-white text-sm transition-colors"
           >
             Sign out
           </button>
         </div>
       </header>
 
-      <main className="max-w-[900px] mx-auto px-6 py-8">
-        <h2 className="text-xl font-bold text-slate-900 mb-4 mt-0">Add a Class</h2>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-          <input
-            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans mb-3"
-            placeholder="Class name (e.g. AP Chemistry – Period 3)"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            aria-label="Class name"
-          />
-
-          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+      <main className="max-w-4xl mx-auto px-6 py-8">
+        <div className="bg-[#16213e] rounded-2xl p-8 border border-white/10">
+          <h2 className="text-2xl font-bold text-white mb-6">Create New Class</h2>
+          
+          <div className="space-y-4">
             <input
-              className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans"
-              type="date"
-              value={testDate}
-              onChange={e => setTestDate(e.target.value)}
-              aria-label="Test date (optional)"
+              className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 outline-none focus:border-[#e94560] transition-colors"
+              placeholder="Class name (e.g., AP Chemistry - Period 3)"
+              value={name}
+              onChange={e => setName(e.target.value)}
             />
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                className="flex-1 bg-[#1a1a2e] border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#e94560] transition-colors"
+                type="date"
+                value={testDate}
+                onChange={e => setTestDate(e.target.value)}
+              />
+              <button
+                className="bg-[#0f3460] hover:bg-[#1a4a7a] text-white rounded-xl px-5 py-3 transition-colors flex items-center justify-center gap-2"
+                onClick={() => fileRef.current?.click()}
+                disabled={pdfLoading}
+              >
+                {pdfLoading ? <Spinner /> : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Upload PDF
+                  </>
+                )}
+              </button>
+              <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
+            </div>
+
+            <textarea
+              className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 outline-none focus:border-[#e94560] transition-colors resize-y min-h-[200px]"
+              placeholder="Paste your class materials, notes, syllabus, or exam questions here..."
+              value={content}
+              onChange={e => setContent(e.target.value)}
+            />
+
             <button
-              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl px-5 py-3 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 whitespace-nowrap"
-              onClick={() => fileRef.current?.click()}
-              disabled={pdfLoading}
+              className="w-full bg-[#e94560] hover:bg-[#d63d56] disabled:bg-[#e94560]/50 text-white rounded-xl py-4 font-semibold transition-colors"
+              onClick={saveClass}
+              disabled={saving || !name || !content}
             >
-              {pdfLoading ? (
-                <span className="flex items-center gap-2">
-                  <Spinner size="sm" /> Reading PDF…
-                </span>
-              ) : (
-                '📎 Upload PDF'
-              )}
+              {saved ? '✓ Class Created!' : saving ? 'Saving...' : 'Create Class'}
             </button>
-            <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
           </div>
-
-          <textarea
-            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans mb-3 resize-y"
-            placeholder="Paste notes, syllabus, past exam questions, or rubrics here…"
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            rows={10}
-            aria-label="Class content"
-          />
-
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-3.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            onClick={saveClass}
-            disabled={saving || !name || !content}
-          >
-            {saved ? '✓ Saved!' : saving ? (
-              <span className="flex items-center justify-center gap-2">
-                <Spinner size="sm" /> Saving…
-              </span>
-            ) : 'Publish Class →'}
-          </button>
         </div>
 
         {myClasses.length > 0 && (
-          <>
-            <h2 className="text-xl font-bold text-slate-900 mb-4 mt-8">Your Classes</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="mt-8">
+            <h3 className="text-xl font-bold text-white mb-4">Your Classes</h3>
+            <div className="grid gap-4">
               {myClasses.map(c => (
                 <div
                   key={c.id}
-                  className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-[#16213e] rounded-xl p-5 border border-white/10 hover:border-[#e94560]/50 transition-colors"
                 >
-                  <div className="font-bold text-slate-900 text-base mb-1.5">{c.name}</div>
-                  <div className="text-sm text-slate-500">{c.content.length.toLocaleString()} chars</div>
-                  {c.testDate && (
-                    <div className="text-sm text-slate-500 mt-1">
-                      📅 Test: {new Date(c.testDate).toLocaleDateString()}
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="font-semibold text-white text-lg mb-1">{c.name}</div>
+                      <div className="text-white/50 text-sm">{c.content.length.toLocaleString()} characters</div>
+                      {c.testDate && (
+                        <div className="text-[#e94560] text-sm mt-2 flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          Test: {new Date(c.testDate).toLocaleDateString()}
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <div className="w-12 h-12 bg-[#0f3460] rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6 text-[#e94560]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
       </main>
     </div>
   );
 }
-
-// ─── Student Portal ───────────────────────────────────────────────────────────
 
 type StudyTab = 'chat' | 'flashcards' | 'quiz' | 'studyplan';
 
@@ -386,7 +379,6 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
       .then(r => r.json())
       .then(data => {
         setEnrolledClasses(data.classes || []);
-        // Load notes for each enrolled class
         data.classes.forEach((classId: string) => {
           fetch(`/api/notes?email=${encodeURIComponent(user.email)}&classId=${encodeURIComponent(classId)}`)
             .then(r => r.json())
@@ -401,8 +393,8 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
 
   const combinedContent = [
     selectedClass?.content || '',
-    myDocs ? `\n\n--- STUDENT'S OWN NOTES ---\n${myDocs}` : '',
-    classNotes[selectedClass?.id || ''] ? `\n\n--- MY CLASS NOTES ---\n${classNotes[selectedClass?.id || '']}` : '',
+    myDocs ? `\n\n--- MY NOTES ---\n${myDocs}` : '',
+    classNotes[selectedClass?.id || ''] ? `\n\n--- CLASS NOTES ---\n${classNotes[selectedClass?.id || '']}` : '',
   ].join('');
 
   async function handlePdf(e: React.ChangeEvent<HTMLInputElement>) {
@@ -412,8 +404,8 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     try {
       const text = await parsePdf(file);
       setMyDocs(prev => prev ? prev + '\n\n' + text : text);
-    } catch {
-      alert('Could not read that PDF. Try a different file.');
+    } catch (err: any) {
+      alert(err.message || 'Could not read that PDF.');
     } finally {
       setPdfLoading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -462,7 +454,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
       setFlashcards(cards);
       setFlipped(new Array(cards.length).fill(false));
     } catch {
-      setFlashcards([{ front: 'Error parsing flashcards', back: text }]);
+      setFlashcards([{ front: 'Error parsing', back: text }]);
     }
   }
 
@@ -505,100 +497,110 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     setClassNotes(prev => ({ ...prev, [classId]: notes }));
   }
 
-  // ── No class selected ───────────────────────────────────────────────────────
-
   if (!selectedClass) {
     return (
-      <div className="min-h-screen bg-slate-50 font-sans">
-        <header className="bg-white border-b border-gray-200 px-4 sm:px-7 py-4 flex items-center justify-between sticky top-0 z-50">
-          <span className="text-lg font-extrabold text-slate-900 tracking-tight">VillagePrep</span>
+      <div className="min-h-screen bg-[#1a1a2e]">
+        <header className="bg-[#16213e] border-b border-white/10 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-500 hidden sm:inline">{user.email}</span>
-            <button
-              onClick={onLogout}
-              className="bg-transparent border border-gray-200 hover:bg-slate-50 text-slate-600 rounded-lg px-3.5 py-1.5 text-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-              aria-label="Sign out"
-            >
+            <div className="w-10 h-10 bg-[#e94560] rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold text-white">VillagePrep</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-white/60 text-sm hidden sm:inline">{user.email}</span>
+            <button onClick={onLogout} className="text-white/60 hover:text-white text-sm transition-colors">
               Sign out
             </button>
           </div>
         </header>
 
-        <main className="max-w-[900px] mx-auto px-6 py-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-4 mt-0">Classes & Study Materials</h2>
-
-          {/* Own materials upload */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-6">
-            <p className="font-semibold text-slate-800 mb-2.5 mt-0">
-              📁 Your Own Materials
-            </p>
-            <p className="text-sm text-slate-500 mb-3 mt-0">
-              Upload your own notes or PDFs — the AI will use these alongside your teacher&apos;s material.
-            </p>
-            <div className="flex flex-wrap gap-2.5">
+        <main className="max-w-4xl mx-auto px-6 py-8">
+          <div className="bg-[#16213e] rounded-2xl p-6 border border-white/10 mb-6">
+            <div className="flex items-center gap-3 mb-3">
+              <svg className="w-5 h-5 text-[#e94560]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p className="font-semibold text-white">My Study Materials</p>
+            </div>
+            <p className="text-white/50 text-sm mb-4">Upload your own notes or PDFs to study alongside class materials.</p>
+            <div className="flex gap-3">
               <button
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="bg-[#0f3460] hover:bg-[#1a4a7a] text-white rounded-xl px-4 py-2.5 transition-colors flex items-center gap-2"
                 onClick={() => fileRef.current?.click()}
                 disabled={pdfLoading}
               >
-                {pdfLoading ? (
-                  <span className="flex items-center gap-2">
-                    <Spinner size="sm" /> Reading…
-                  </span>
-                ) : (
-                  '📎 Upload PDF'
+                {pdfLoading ? <Spinner /> : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Upload PDF
+                  </>
                 )}
               </button>
               {myDocs && (
                 <button
-                  className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  className="bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl px-4 py-2.5 transition-colors"
                   onClick={() => setMyDocs('')}
-                  aria-label="Clear my notes"
                 >
-                  Clear My Notes
+                  Clear
                 </button>
               )}
             </div>
             {myDocs && (
-              <p className="mt-2.5 text-xs text-green-600 font-medium">
-                ✓ {myDocs.length.toLocaleString()} characters loaded from your files
-              </p>
+              <p className="mt-3 text-emerald-400 text-sm">{myDocs.length.toLocaleString()} characters loaded</p>
             )}
             <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
           </div>
 
+          <h3 className="text-xl font-bold text-white mb-4">Available Classes</h3>
           {classes.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid gap-4">
               {classes.map(c => (
                 <div
                   key={c.id}
-                  className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+                  className="bg-[#16213e] rounded-xl p-5 border border-white/10 hover:border-[#e94560]/50 transition-colors"
                 >
-                  <div className="font-bold text-slate-900 text-base mb-1">{c.name}</div>
-                  <div className="text-sm text-slate-500">by {c.teacherEmail.split('@')[0]}</div>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <div className="font-semibold text-white text-lg">{c.name}</div>
+                      <div className="text-white/50 text-sm">by {c.teacherEmail.split('@')[0]}</div>
+                    </div>
+                    <div className="w-10 h-10 bg-[#0f3460] rounded-xl flex items-center justify-center">
+                      <svg className="w-5 h-5 text-[#e94560]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                  </div>
                   {c.testDate && (
-                    <div className="text-sm text-red-500 font-semibold mt-1">
-                      📅 Test: {new Date(c.testDate).toLocaleDateString()}
+                    <div className="text-[#e94560] text-sm mb-3 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Test: {new Date(c.testDate).toLocaleDateString()}
                     </div>
                   )}
                   <textarea
-                    className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none transition-colors focus:border-blue-500 font-sans mt-3 h-20 resize-none"
-                    placeholder="Add your personal notes for this class…"
+                    className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-white/40 outline-none focus:border-[#e94560] transition-colors resize-none mb-3"
+                    placeholder="Add personal notes..."
+                    rows={2}
                     value={classNotes[c.id] || ''}
                     onChange={e => setClassNotes(prev => ({ ...prev, [c.id]: e.target.value }))}
                     onBlur={() => saveNotes(c.id, classNotes[c.id] || '')}
-                    aria-label={`Personal notes for ${c.name}`}
                   />
-                  <div className="flex gap-2.5 mt-3">
+                  <div className="flex gap-2">
                     <button
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      className="flex-1 bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-2.5 font-medium transition-colors"
                       onClick={() => { setSelectedClass(c); setMessages([]); }}
                     >
-                      Study This Class →
+                      Study Now
                     </button>
                     {!enrolledClasses.includes(c.id) && (
                       <button
-                        className="bg-blue-700 hover:bg-blue-800 text-white rounded-xl px-4 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="bg-[#0f3460] hover:bg-[#1a4a7a] text-white rounded-xl px-4 py-2.5 transition-colors"
                         onClick={() => enroll(c.id)}
                       >
                         Enroll
@@ -609,83 +611,57 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               ))}
             </div>
           ) : (
-            <p className="text-slate-400 text-sm">No classes yet — ask your teacher to add one.</p>
-          )}
-
-          {myDocs && (
-            <button
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mt-5"
-              onClick={() => {
-                setSelectedClass({ id: 'personal', name: 'My Notes', content: '', testDate: '', teacherEmail: '' });
-              }}
-            >
-              Study My Own Notes Only →
-            </button>
+            <p className="text-white/40 text-center py-8">No classes available yet.</p>
           )}
         </main>
       </div>
     );
   }
 
-  // ── Study view ───────────────────────────────────────────────────────────────
-
   return (
-    <div className="min-h-screen bg-slate-50 font-sans">
-      <header className="bg-white border-b border-gray-200 px-4 sm:px-7 py-4 flex items-center justify-between sticky top-0 z-50">
+    <div className="min-h-screen bg-[#1a1a2e]">
+      <header className="bg-[#16213e] border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <button
           onClick={() => setSelectedClass(null)}
-          className="text-base cursor-pointer text-blue-600 hover:text-blue-700 font-semibold bg-transparent border-none p-0 focus:outline-none focus:underline"
+          className="text-white hover:text-[#e94560] transition-colors flex items-center gap-2"
         >
-          ← Back
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
         </button>
-        <span className="text-base font-extrabold text-slate-900 tracking-tight hidden sm:inline">{selectedClass.name}</span>
-        <span className="text-base font-extrabold text-slate-900 tracking-tight sm:hidden">{selectedClass.name.length > 20 ? selectedClass.name.slice(0, 20) + '…' : selectedClass.name}</span>
-        <div className="flex items-center gap-2.5">
+        <span className="text-white font-semibold hidden sm:inline">{selectedClass.name}</span>
+        <span className="text-white font-semibold sm:hidden">{selectedClass.name.slice(0, 15)}...</span>
+        <div className="flex items-center gap-3">
           <button
-            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl px-4 py-1.5 text-xs font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="bg-[#0f3460] hover:bg-[#1a4a7a] text-white rounded-xl px-3 py-1.5 text-sm transition-colors"
             onClick={() => fileRef.current?.click()}
             disabled={pdfLoading}
           >
-            {pdfLoading ? (
-              <span className="flex items-center gap-1">
-                <Spinner size="sm" /> Reading…
-              </span>
-            ) : (
-              '+ My Notes'
-            )}
+            {pdfLoading ? 'Loading...' : '+ Notes'}
           </button>
           <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
-          <button
-            onClick={onLogout}
-            className="bg-transparent border border-gray-200 hover:bg-slate-50 text-slate-600 rounded-lg px-3.5 py-1.5 text-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-            aria-label="Sign out"
-          >
+          <button onClick={onLogout} className="text-white/60 hover:text-white text-sm transition-colors">
             Sign out
           </button>
         </div>
       </header>
 
       {myDocs && (
-        <div className="bg-blue-50 border-b border-blue-200 px-4 sm:px-7 py-2.5 text-sm text-blue-700 flex items-center gap-3">
-          <span>📎 Your notes included ({myDocs.length.toLocaleString()} chars)</span>
-          <button
-            onClick={() => setMyDocs('')}
-            className="text-blue-600 hover:text-blue-800 bg-transparent border-none text-base cursor-pointer ml-auto focus:outline-none focus:underline"
-            aria-label="Clear my notes"
-          >
-            ✕
-          </button>
+        <div className="bg-[#e94560]/20 border-b border-[#e94560]/30 px-6 py-2 flex items-center justify-between">
+          <span className="text-white/80 text-sm">My notes included ({myDocs.length.toLocaleString()} chars)</span>
+          <button onClick={() => setMyDocs('')} className="text-white/60 hover:text-white text-sm">Clear</button>
         </div>
       )}
 
-      <div className="flex gap-1 px-5 py-3 bg-white border-b border-gray-200 overflow-x-auto">
+      <div className="flex gap-2 px-4 py-3 bg-[#16213e] border-b border-white/10 overflow-x-auto">
         {(['chat', 'flashcards', 'quiz', 'studyplan'] as StudyTab[]).map(t => (
           <button
             key={t}
-            className={`px-4 py-2 text-sm font-semibold rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               tab === t
-                ? 'bg-blue-50 text-blue-600'
-                : 'text-slate-500 hover:bg-slate-50'
+                ? 'bg-[#e94560] text-white'
+                : 'text-white/60 hover:text-white hover:bg-white/5'
             }`}
             onClick={() => {
               if (t === 'flashcards') loadFlashcards();
@@ -694,61 +670,48 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               else setTab('chat');
             }}
           >
-            {{ chat: '💬 Chat', flashcards: '🃏 Flashcards', quiz: '✏️ Quiz', studyplan: '📅 Study Plan' }[t]}
+            {t === 'chat' ? 'Chat' : t === 'flashcards' ? 'Flashcards' : t === 'quiz' ? 'Quiz' : 'Study Plan'}
           </button>
         ))}
       </div>
 
-      <main className="max-w-[900px] mx-auto px-6 py-7">
-        {/* CHAT */}
+      <main className="max-w-3xl mx-auto px-4 py-6">
         {tab === 'chat' && (
-          <div className="flex flex-col h-[calc(100vh-220px)]">
-            <div className="flex-1 overflow-y-auto flex flex-col gap-3 pb-4">
+          <div className="flex flex-col h-[calc(100vh-300px)]">
+            <div className="flex-1 overflow-y-auto space-y-3 pb-4">
               {messages.length === 0 && (
-                <p className="text-slate-400 text-center mt-20">Ask anything about {selectedClass.name}…</p>
+                <p className="text-white/40 text-center mt-20">Ask me anything about {selectedClass.name}...</p>
               )}
               {messages.map((m, i) => (
                 <div
                   key={i}
-                  className={`px-4.5 py-3 rounded-[18px] text-sm leading-relaxed max-w-[85%] ${
+                  className={`px-4 py-3 rounded-2xl text-sm max-w-[80%] ${
                     m.role === 'user'
-                      ? 'bg-blue-600 text-white self-end rounded-tr-sm'
-                      : 'bg-slate-100 text-slate-900 self-start rounded-tl-sm'
+                      ? 'bg-[#e94560] text-white ml-auto rounded-br-sm'
+                      : 'bg-[#16213e] text-white mr-auto rounded-bl-sm'
                   }`}
                 >
                   {m.content}
                 </div>
               ))}
               {aiLoading && (
-                <div className="bg-slate-100 text-slate-900 px-4 py-3 rounded-[18px] rounded-tl-sm self-start max-w-[85%] flex items-center gap-2">
-                  <Spinner size="sm" /> Thinking…
+                <div className="bg-[#16213e] text-white px-4 py-3 rounded-2xl rounded-bl-sm max-w-[80%] flex items-center gap-2">
+                  <Spinner /> Thinking...
                 </div>
               )}
               <div ref={chatBottom} />
             </div>
-            <div className="pt-3 border-t border-gray-200">
-              <div className="flex flex-wrap gap-2 mb-2.5">
-                {['Summarize key topics', 'What should I focus on?', 'Make a practice question'].map(q => (
-                  <button
-                    key={q}
-                    className="bg-slate-100 hover:bg-slate-200 border-none rounded-full px-3.5 py-1.5 text-xs cursor-pointer text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onClick={() => setInput(q)}
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-2.5">
+            <div className="pt-3 border-t border-white/10">
+              <div className="flex gap-2">
                 <input
-                  className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans"
+                  className="flex-1 bg-[#16213e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 outline-none focus:border-[#e94560] transition-colors"
                   value={input}
                   onChange={e => setInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendChat()}
-                  placeholder="Ask a question…"
-                  aria-label="Ask a question"
+                  onKeyDown={e => e.key === 'Enter' && sendChat()}
+                  placeholder="Ask a question..."
                 />
                 <button
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="bg-[#e94560] hover:bg-[#d63d56] disabled:bg-[#e94560]/50 text-white rounded-xl px-5 py-3 font-medium transition-colors"
                   onClick={sendChat}
                   disabled={aiLoading || !input.trim()}
                 >
@@ -759,45 +722,29 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           </div>
         )}
 
-        {/* FLASHCARDS */}
         {tab === 'flashcards' && (
           <div>
-            {aiLoading && (
-              <div className="flex flex-col items-center gap-3">
-                <Spinner size="lg" />
-                <p className="text-slate-400 text-sm">Generating flashcards…</p>
-              </div>
-            )}
+            {aiLoading && <div className="flex justify-center py-20"><Spinner /></div>}
             {flashcards.length === 0 && !aiLoading && (
-              <p className="text-slate-400 text-center mt-20">No flashcards yet — generate some to start studying!</p>
+              <p className="text-white/40 text-center py-20">Generate flashcards to start studying!</p>
             )}
             {flashcards.length > 0 && (
               <>
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mb-5"
-                  onClick={loadFlashcards}
-                >
-                  🔄 Regenerate
+                <button className="w-full bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 mb-4" onClick={loadFlashcards}>
+                  Generate New Cards
                 </button>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid gap-4">
                   {flashcards.map((fc, i) => (
                     <div
                       key={i}
-                      className="bg-white border-2 border-gray-200 rounded-2xl p-6 min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
+                      className="bg-[#16213e] border border-white/10 rounded-xl p-6 cursor-pointer hover:border-[#e94560]/50 transition-colors min-h-[140px] flex items-center justify-center"
                       onClick={() => setFlipped(f => f.map((v, j) => j === i ? !v : v))}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={e => e.key === 'Enter' && setFlipped(f => f.map((v, j) => j === i ? !v : v))}
-                      aria-label={`Flashcard: ${flipped[i] ? 'Answer' : 'Question'}`}
                     >
                       <div className="text-center">
-                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                        <div className="text-white/40 text-xs uppercase tracking-wider mb-2">
                           {flipped[i] ? 'Answer' : 'Question'}
                         </div>
-                        <div className="text-base font-semibold text-slate-900 leading-relaxed">
-                          {flipped[i] ? fc.back : fc.front}
-                        </div>
-                        <div className="mt-4 text-xs text-slate-300">tap to flip</div>
+                        <div className="text-white font-medium">{flipped[i] ? fc.back : fc.front}</div>
                       </div>
                     </div>
                   ))}
@@ -807,42 +754,33 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           </div>
         )}
 
-        {/* QUIZ */}
         {tab === 'quiz' && (
           <div>
-            {aiLoading && (
-              <div className="flex flex-col items-center gap-3">
-                <Spinner size="lg" />
-                <p className="text-slate-400 text-sm">Generating quiz…</p>
-              </div>
-            )}
+            {aiLoading && <div className="flex justify-center py-20"><Spinner /></div>}
             {quiz.length === 0 && !aiLoading && (
-              <p className="text-slate-400 text-center mt-20">No quiz yet — generate one to test your knowledge!</p>
+              <p className="text-white/40 text-center py-20">Generate a quiz to test your knowledge!</p>
             )}
             {quiz.length > 0 && (
               <>
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mb-5"
-                  onClick={loadQuiz}
-                >
-                  🔄 New Quiz
+                <button className="w-full bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 mb-4" onClick={loadQuiz}>
+                  New Quiz
                 </button>
                 {quiz.map((q, qi) => (
-                  <div key={qi} className="bg-white border border-gray-200 rounded-2xl p-6 mb-4 shadow-sm">
-                    <p className="font-bold text-slate-900 text-base mb-4 mt-0">{qi + 1}. {q.question}</p>
-                    <div className="flex flex-col gap-2">
+                  <div key={qi} className="bg-[#16213e] border border-white/10 rounded-xl p-5 mb-4">
+                    <p className="text-white font-medium mb-3">{qi + 1}. {q.question}</p>
+                    <div className="space-y-2">
                       {q.options.map((opt, oi) => {
                         const answered = answers[qi] !== undefined;
                         const isSelected = answers[qi] === oi;
                         const isCorrect = q.correct === oi;
-                        let bgClass = 'bg-slate-100 hover:bg-slate-200';
-                        if (answered && isSelected && isCorrect) bgClass = 'bg-green-100 border-green-500';
-                        if (answered && isSelected && !isCorrect) bgClass = 'bg-red-100 border-red-500';
-                        if (answered && !isSelected && isCorrect) bgClass = 'bg-green-100 border-green-500';
+                        let bg = 'bg-[#1a1a2e] hover:bg-[#0f3460]';
+                        if (answered && isSelected && isCorrect) bg = 'bg-emerald-500/30 border-emerald-500';
+                        if (answered && isSelected && !isCorrect) bg = 'bg-red-500/30 border-red-500';
+                        if (answered && !isSelected && isCorrect) bg = 'bg-emerald-500/20 border-emerald-500';
                         return (
                           <button
                             key={oi}
-                            className={`w-full text-left border border-gray-200 rounded-xl px-4 py-3 text-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans ${bgClass}`}
+                            className={`w-full text-left border border-white/10 rounded-lg px-4 py-3 text-white text-sm transition-colors ${bg}`}
                             onClick={() => {
                               if (answered) return;
                               setAnswers(a => { const n = [...a]; n[qi] = oi; return n; });
@@ -854,9 +792,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                       })}
                     </div>
                     {answers[qi] !== undefined && (
-                      <p className="text-sm text-slate-600 mt-2">
-                        💡 {q.explanation}
-                      </p>
+                      <p className="text-white/60 text-sm mt-2">{q.explanation}</p>
                     )}
                   </div>
                 ))}
@@ -865,28 +801,15 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           </div>
         )}
 
-        {/* STUDY PLAN */}
         {tab === 'studyplan' && (
           <div>
-            {aiLoading && (
-              <div className="flex flex-col items-center gap-3">
-                <Spinner size="lg" />
-                <p className="text-slate-400 text-sm">Building your study plan…</p>
-              </div>
-            )}
+            {aiLoading && <div className="flex justify-center py-20"><Spinner /></div>}
             {studyPlan && (
               <>
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mb-5"
-                  onClick={loadStudyPlan}
-                >
-                  🔄 Regenerate
+                <button className="w-full bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 mb-4" onClick={loadStudyPlan}>
+                  Regenerate
                 </button>
-                <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm">
-                  <pre className="font-sans text-sm text-slate-800 leading-relaxed whitespace-pre-wrap m-0">
-                    {studyPlan}
-                  </pre>
-                </div>
+                <pre className="bg-[#16213e] border border-white/10 rounded-xl p-5 text-white text-sm whitespace-pre-wrap">{studyPlan}</pre>
               </>
             )}
           </div>
@@ -895,8 +818,6 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     </div>
   );
 }
-
-// ─── App Root ─────────────────────────────────────────────────────────────────
 
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
@@ -926,4 +847,3 @@ export default function App() {
   if (user.role === 'teacher') return <TeacherPortal user={user} onLogout={handleLogout} />;
   return <StudentPortal user={user} onLogout={handleLogout} />;
 }
-
