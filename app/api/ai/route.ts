@@ -36,6 +36,11 @@ export async function POST(req: NextRequest) {
     : [{ role: 'system', content: systemPrompt }, { role: 'user', content: userMessage }];
 
   try {
+    if (!process.env.OPENROUTER_API_KEY) {
+      console.error('Missing OPENROUTER_API_KEY');
+      return NextResponse.json({ error: 'AI service not configured' }, { status: 500 });
+    }
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -52,9 +57,16 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await response.json();
+    
+    if (data.error) {
+      console.error('OpenRouter error:', data.error);
+      return NextResponse.json({ error: data.error.message || 'AI error' }, { status: 500 });
+    }
+    
     const text = data.choices?.[0]?.message?.content || 'Something went wrong. Please try again.';
     return NextResponse.json({ text });
-  } catch {
+  } catch (err) {
+    console.error('AI route catch error:', err);
     return NextResponse.json({ text: 'Error connecting to AI. Please try again.' }, { status: 500 });
   }
 }
