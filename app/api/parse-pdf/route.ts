@@ -10,8 +10,20 @@ export async function POST(req: NextRequest) {
     }
 
     const fileName = file.name.toLowerCase();
-    const buffer = Buffer.from(await file.arrayBuffer());
+    
+    if (fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp|heic|heif)$/)) {
+      return NextResponse.json({ 
+        error: 'Image files cannot be parsed. Please use PDF, TXT, MD, CSV, or DOCX files instead.' 
+      }, { status: 400 });
+    }
+    
+    if (!fileName.match(/\.(pdf|txt|md|csv|docx)$/)) {
+      return NextResponse.json({ 
+        error: 'Unsupported file type. Please use PDF, TXT, MD, CSV, or DOCX files.' 
+      }, { status: 400 });
+    }
 
+    const buffer = Buffer.from(await file.arrayBuffer());
     let extractedText = '';
 
     if (fileName.endsWith('.pdf')) {
@@ -30,24 +42,12 @@ export async function POST(req: NextRequest) {
           .join(' ');
         extractedText += pageText + '\n\n';
       }
-    } 
-    else if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
+    } else if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
       extractedText = buffer.toString('utf-8');
-    }
-    else if (fileName.endsWith('.docx')) {
+    } else if (fileName.endsWith('.docx')) {
       const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value;
-    }
-    else if (fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)) {
-      return NextResponse.json({ 
-        error: 'Image files cannot be parsed directly. Please convert images to PDF or text format.' 
-      }, { status: 400 });
-    }
-    else {
-      return NextResponse.json({ 
-        error: 'Unsupported file type. Please use PDF, TXT, MD, CSV, or DOCX files.' 
-      }, { status: 400 });
     }
 
     if (!extractedText.trim()) {

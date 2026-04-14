@@ -572,6 +572,10 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
       body: JSON.stringify({ email: user.email, name: newFolderName }),
     });
     const data = await res.json();
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
     if (data.folder) {
       setFolders(prev => [...prev, data.folder]);
     }
@@ -643,12 +647,23 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                 {myDocs ? (
                   <div>
                     <p className="text-emerald-400 text-sm mb-3">{myDocs.length.toLocaleString()} characters loaded</p>
-                    <button
-                      className="text-red-400 text-sm hover:text-red-300"
-                      onClick={() => setMyDocs('')}
-                    >
-                      Clear all
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className="flex-1 bg-[#e94560] hover:bg-[#d63d56] text-white rounded-lg py-2 text-sm"
+                        onClick={() => {
+                          setSelectedClass({ id: 'my-files', name: 'My Files', content: myDocs, testDate: '', teacherEmail: user.email });
+                          setMessages([]);
+                        }}
+                      >
+                        Start Studying →
+                      </button>
+                      <button
+                        className="text-red-400 text-sm hover:text-red-300 px-3"
+                        onClick={() => setMyDocs('')}
+                      >
+                        Clear
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <p className="text-white/40 text-sm">Upload files or paste content to start studying</p>
