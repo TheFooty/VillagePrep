@@ -23,12 +23,6 @@ interface Folder {
   classIds: string[];
 }
 
-interface Progress {
-  classId: string;
-  type: string;
-  score?: number;
-}
-
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -72,6 +66,242 @@ async function getYouTubeTranscript(url: string): Promise<string> {
 
 function Spinner() {
   return <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />;
+}
+
+function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(true);
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
+      {/* Animated background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div 
+          className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-[120px] transition-transform duration-[2000ms] ease-out"
+          style={{
+            background: 'radial-gradient(circle, #14b8a6 0%, transparent 70%)',
+            left: '50%',
+            top: '50%',
+            transform: `translate(${mousePosition.x * 0.02 - 300}px, ${mousePosition.y * 0.02 - 300}px)`,
+          }}
+        />
+        <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] rounded-full opacity-10 blur-[80px]" style={{ background: '#14b8a6' }} />
+        <div className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] rounded-full opacity-10 blur-[100px]" style={{ background: '#6366f1' }} />
+      </div>
+
+      {/* Navigation */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold">VillagePrep</span>
+          </div>
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-gray-400 hover:text-white text-sm transition-colors">Features</a>
+            <a href="#how-it-works" className="text-gray-400 hover:text-white text-sm transition-colors">How It Works</a>
+            <a href="#pricing" className="text-gray-400 hover:text-white text-sm transition-colors">Pricing</a>
+          </div>
+          <button
+            onClick={onGetStarted}
+            className="px-5 py-2.5 bg-[#14b8a6] hover:bg-[#0d9488] text-white text-sm font-medium rounded-full transition-all duration-300 hover:shadow-[0_0_20px_rgba(20,184,166,0.4)]"
+          >
+            Get Started
+          </button>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-6">
+        <div className="max-w-5xl mx-auto text-center">
+          <div className={`transition-all duration-700 delay-100 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <span className="inline-block px-4 py-1.5 rounded-full bg-[#14b8a6]/10 border border-[#14b8a6]/20 text-[#14b8a6] text-xs font-medium mb-6">
+              ✨ AI-Powered Study Assistant
+            </span>
+          </div>
+          
+          <h1 className={`text-5xl md:text-7xl font-bold leading-tight mb-6 transition-all duration-700 delay-200 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <span className="text-white">Find your perfect</span>
+            <br />
+            <span className="bg-gradient-to-r from-[#14b8a6] to-[#6366f1] bg-clip-text text-transparent">
+              study path
+            </span>
+          </h1>
+          
+          <p className={`text-lg text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed transition-all duration-700 delay-300 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            Upload your notes, PDFs, or paste content from any source. 
+            VillagePrep uses AI to generate flashcards, quizzes, study plans, 
+            and more—all personalized to your learning style.
+          </p>
+          
+          <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 transition-all duration-700 delay-400 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <button
+              onClick={onGetStarted}
+              className="px-8 py-4 bg-[#14b8a6] hover:bg-[#0d9488] text-white font-semibold rounded-full transition-all duration-300 hover:shadow-[0_0_30px_rgba(20,184,166,0.5)] flex items-center gap-2 group"
+            >
+              Start Studying Free
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </button>
+            <button className="px-8 py-4 border border-gray-700 hover:border-[#14b8a6] text-gray-300 hover:text-white font-medium rounded-full transition-all duration-300">
+              See How It Works
+            </button>
+          </div>
+        </div>
+
+        {/* Mock Preview Card */}
+        <div className={`mt-20 max-w-4xl mx-auto transition-all duration-1000 delay-500 ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-16'}`}>
+          <div className="relative rounded-2xl overflow-hidden border border-gray-800 shadow-2xl">
+            {/* Window controls */}
+            <div className="bg-[#1a1a1f] px-4 py-3 flex items-center gap-2 border-b border-gray-800">
+              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500" />
+              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <div className="flex-1 text-center">
+                <span className="text-gray-500 text-xs">villageprep.net / study</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5 text-xs text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Connected
+                </span>
+              </div>
+            </div>
+            
+            {/* Chat UI Mock */}
+            <div className="bg-[#0f0f14] p-6 grid grid-cols-4 gap-4 min-h-[300px]">
+              {/* Sidebar */}
+              <div className="col-span-1 space-y-2">
+                <div className="text-sm font-semibold text-white mb-4">VillagePrep</div>
+                <button className="w-full text-left px-3 py-2 rounded-lg bg-[#14b8a6]/20 text-[#14b8a6] text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  Chat
+                </button>
+                <button className="w-full text-left px-3 py-2 rounded-lg text-gray-400 text-sm hover:bg-white/5 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Classes
+                </button>
+                <button className="w-full text-left px-3 py-2 rounded-lg text-gray-400 text-sm hover:bg-white/5 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Flashcards
+                </button>
+              </div>
+              
+              {/* Chat area */}
+              <div className="col-span-3 space-y-4">
+                <div className="text-sm text-gray-300">
+                  <span className="text-white font-medium">Generate study materials</span>
+                </div>
+                
+                {/* User message */}
+                <div className="flex justify-end">
+                  <div className="bg-[#14b8a6] text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm max-w-[80%]">
+                    Create flashcards for my AP Chemistry notes
+                  </div>
+                </div>
+                
+                {/* AI response */}
+                <div className="flex justify-start">
+                  <div className="bg-[#1a1a1f] border border-gray-800 text-gray-300 px-4 py-3 rounded-2xl rounded-bl-sm text-sm max-w-[90%]">
+                    <p className="mb-3">Here are 10 flashcards for your AP Chemistry notes:</p>
+                    <div className="space-y-2">
+                      {['Atom structure', 'Periodic trends', 'Chemical bonding', 'Acids & Bases', 'Thermodynamics'].map((term, i) => (
+                        <div key={i} className="flex items-center justify-between bg-[#0f0f14] px-3 py-2 rounded-lg border border-gray-800">
+                          <span className="text-white text-sm">{term}</span>
+                          <span className="text-xs text-gray-500">Click to flip</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action buttons */}
+                <div className="flex gap-2 flex-wrap">
+                  <button className="px-3 py-1.5 rounded-full border border-gray-700 hover:border-[#14b8a6] text-xs text-gray-300 transition-colors">
+                    Generate Quiz
+                  </button>
+                  <button className="px-3 py-1.5 rounded-full border border-gray-700 hover:border-[#14b8a6] text-xs text-gray-300 transition-colors">
+                    Study Plan
+                  </button>
+                  <button className="px-3 py-1.5 rounded-full border border-gray-700 hover:border-[#14b8a6] text-xs text-gray-300 transition-colors">
+                    Summary
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Preview */}
+      <section id="features" className="py-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Everything you need to <span className="text-[#14b8a6]">ace</span> your classes
+            </h2>
+            <p className="text-gray-400 max-w-xl mx-auto">
+              Upload any study material and let AI do the heavy lifting
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { icon: '📝', title: 'Smart Notes', desc: 'AI generates organized notes from any content' },
+              { icon: '🃏', title: 'Flashcards', desc: 'Auto-created flashcards for spaced repetition' },
+              { icon: '❓', title: 'Practice Quizzes', desc: 'Test your knowledge with AI-generated quizzes' },
+              { icon: '📅', title: 'Study Plans', desc: 'Personalized day-by-day study schedules' },
+              { icon: '🎙️', title: 'Podcast Scripts', desc: 'Listen to your notes on the go' },
+              { icon: '📺', title: 'YouTube Support', desc: 'Extract text from any educational video' },
+            ].map((feature, i) => (
+              <div 
+                key={i}
+                className="group p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-[#14b8a6]/50 transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="text-3xl mb-3">{feature.icon}</div>
+                <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-[#14b8a6] transition-colors">{feature.title}</h3>
+                <p className="text-gray-400 text-sm">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-10 px-6 border-t border-gray-800">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded bg-[#14b8a6] flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <span className="font-semibold">VillagePrep</span>
+          </div>
+          <p className="text-gray-500 text-sm">© 2025 VillagePrep. All rights reserved.</p>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
 function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
@@ -126,29 +356,26 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[#1a1a2e]">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-[#e94560]/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#0f3460]/30 rounded-full blur-3xl" />
+      <div className="absolute inset-0 bg-[#0a0a0f]">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full opacity-10 blur-[120px]" style={{ background: '#14b8a6' }} />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full opacity-10 blur-[100px]" style={{ background: '#6366f1' }} />
       </div>
       
-      <div className="relative z-10 bg-white/10 backdrop-blur-xl rounded-3xl p-10 w-full max-w-[440px] border border-white/20 shadow-2xl">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#e94560] rounded-2xl mb-4 shadow-lg">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="relative z-10 bg-white/5 backdrop-blur-xl rounded-3xl p-8 w-full max-w-[420px] border border-white/10">
+        <div className="flex items-center gap-3 mb-8 justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">
-            <span className="text-[#e94560]">Village</span>Prep
-          </h1>
-          <p className="text-white/60 text-sm">Your smart study companion</p>
+          <span className="text-2xl font-bold">VillagePrep</span>
         </div>
 
         <div className="space-y-4">
           {step === 'email' ? (
             <>
               <input
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-4 text-white placeholder-white/40 outline-none focus:border-[#e94560] transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors"
                 type="email"
                 placeholder="your@email.com"
                 value={email}
@@ -156,21 +383,17 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
                 onKeyDown={e => e.key === 'Enter' && sendCode()}
               />
               <button
-                className="w-full bg-[#e94560] hover:bg-[#d63d56] disabled:bg-[#e94560]/50 text-white rounded-xl py-4 font-semibold transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-[#14b8a6] hover:bg-[#0d9488] disabled:opacity-50 text-white rounded-xl py-3.5 font-medium transition-colors flex items-center justify-center gap-2"
                 onClick={sendCode}
                 disabled={loading || !email}
               >
-                {loading ? <Spinner /> : 'Get Started'}
+                {loading ? <Spinner /> : 'Continue →'}
               </button>
             </>
           ) : (
             <>
-              <div className="text-center mb-4">
-                <p className="text-white/60 text-sm">Enter the code sent to</p>
-                <p className="text-white font-medium">{email}</p>
-              </div>
               <input
-                className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-4 text-white text-center text-2xl letter-spacing-[0.5em] placeholder-white/30 outline-none focus:border-[#e94560] transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-center text-2xl letter-spacing-[0.5em] placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors"
                 type="text"
                 placeholder="000000"
                 value={code}
@@ -179,14 +402,14 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
                 onKeyDown={e => e.key === 'Enter' && verifyCode()}
               />
               <button
-                className="w-full bg-[#e94560] hover:bg-[#d63d56] disabled:bg-[#e94560]/50 text-white rounded-xl py-4 font-semibold transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-[#14b8a6] hover:bg-[#0d9488] disabled:opacity-50 text-white rounded-xl py-3.5 font-medium transition-colors flex items-center justify-center gap-2"
                 onClick={verifyCode}
                 disabled={loading || code.length < 6}
               >
-                {loading ? <Spinner /> : 'Verify'}
+                {loading ? <Spinner /> : 'Sign In'}
               </button>
               <button
-                className="w-full text-white/50 hover:text-white text-sm transition-colors"
+                className="w-full text-gray-500 hover:text-white text-sm transition-colors"
                 onClick={() => { setStep('email'); setCode(''); setError(''); }}
               >
                 ← Change email
@@ -279,31 +502,31 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
   const myClasses = classes.filter(c => c.teacherEmail === user.email);
 
   return (
-    <div className="min-h-screen bg-[#1a1a2e]">
-      <header className="bg-[#16213e] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#0a0a0f]">
+      <header className="bg-[#0f0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[#e94560] rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <span className="text-xl font-bold text-white">VillagePrep</span>
+          <span className="text-xl font-bold">VillagePrep</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-white/60 text-sm hidden sm:inline">{user.email}</span>
-          <button onClick={onLogout} className="text-white/60 hover:text-white text-sm transition-colors">
+          <span className="text-gray-400 text-sm hidden sm:inline">{user.email}</span>
+          <button onClick={onLogout} className="text-gray-400 hover:text-white text-sm transition-colors">
             Sign out
           </button>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-[#16213e] rounded-2xl p-8 border border-white/10">
+        <div className="bg-[#0f0f14] rounded-2xl p-8 border border-white/10">
           <h2 className="text-2xl font-bold text-white mb-6">Create New Class</h2>
           
           <div className="space-y-4">
             <input
-              className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 outline-none focus:border-[#e94560] transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors"
               placeholder="Class name (e.g., AP Chemistry - Period 3)"
               value={name}
               onChange={e => setName(e.target.value)}
@@ -311,14 +534,14 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
 
             <div className="flex flex-col sm:flex-row gap-3">
               <input
-                className="flex-1 bg-[#1a1a2e] border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#e94560] transition-colors"
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#14b8a6] transition-colors"
                 type="date"
                 value={testDate}
                 onChange={e => setTestDate(e.target.value)}
               />
               <div className="flex gap-2">
                 <button
-                  className="bg-[#0f3460] hover:bg-[#1a4a7a] text-white rounded-xl px-4 py-3 transition-colors flex items-center gap-2"
+                  className="bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3 transition-colors flex items-center gap-2"
                   onClick={() => fileRef.current?.click()}
                   disabled={fileLoading}
                 >
@@ -327,37 +550,37 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      Upload File
+                      File
                     </>
                   )}
                 </button>
                 <button
-                  className="bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl px-4 py-3 transition-colors flex items-center gap-2"
+                  className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-4 py-3 transition-colors flex items-center gap-2"
                   onClick={handleYouTube}
                   disabled={ytLoading}
                 >
                   {ytLoading ? <Spinner /> : (
                     <>
                       <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/>
                       </svg>
                       YouTube
                     </>
                   )}
                 </button>
               </div>
-              <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp" className="hidden" onChange={handleFile} />
+              <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png" className="hidden" onChange={handleFile} />
             </div>
 
             <textarea
-              className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 outline-none focus:border-[#e94560] transition-colors resize-y min-h-[200px]"
-              placeholder="Or paste your class materials, notes, or content here..."
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors resize-y min-h-[200px]"
+              placeholder="Paste your class materials, notes, or content here..."
               value={content}
               onChange={e => setContent(e.target.value)}
             />
 
             <button
-              className="w-full bg-[#e94560] hover:bg-[#d63d56] disabled:bg-[#e94560]/50 text-white rounded-xl py-4 font-semibold transition-colors"
+              className="w-full bg-[#14b8a6] hover:bg-[#0d9488] disabled:opacity-50 text-white rounded-xl py-4 font-semibold transition-colors"
               onClick={saveClass}
               disabled={saving || !name || !content}
             >
@@ -371,13 +594,13 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
             <h3 className="text-xl font-bold text-white mb-4">Your Classes</h3>
             <div className="grid gap-4">
               {myClasses.map(c => (
-                <div key={c.id} className="bg-[#16213e] rounded-xl p-5 border border-white/10 hover:border-[#e94560]/50 transition-colors">
+                <div key={c.id} className="bg-[#0f0f14] rounded-xl p-5 border border-white/10 hover:border-[#14b8a6]/50 transition-colors">
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="font-semibold text-white text-lg mb-1">{c.name}</div>
-                      <div className="text-white/50 text-sm">{c.content.length.toLocaleString()} characters</div>
+                      <div className="text-gray-500 text-sm">{c.content.length.toLocaleString()} characters</div>
                       {c.testDate && (
-                        <div className="text-[#e94560] text-sm mt-2 flex items-center gap-1">
+                        <div className="text-[#14b8a6] text-sm mt-2 flex items-center gap-1">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
@@ -385,8 +608,8 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
                         </div>
                       )}
                     </div>
-                    <div className="w-12 h-12 bg-[#0f3460] rounded-xl flex items-center justify-center">
-                      <svg className="w-6 h-6 text-[#e94560]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6 text-[#14b8a6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                       </svg>
                     </div>
@@ -402,26 +625,6 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
 }
 
 type StudyTab = 'notes' | 'chat' | 'flashcards' | 'quiz' | 'studyplan' | 'podcast' | 'summary';
-
-const tabLabels: Record<StudyTab, string> = {
-  notes: 'Notes',
-  chat: 'Chat',
-  flashcards: 'Flashcards',
-  quiz: 'Quiz',
-  studyplan: 'Study Plan',
-  podcast: 'Podcast',
-  summary: 'Summary',
-};
-
-const tabIcons: Record<StudyTab, string> = {
-  notes: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-  chat: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-  flashcards: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
-  quiz: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
-  studyplan: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-  podcast: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z',
-  summary: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-};
 
 function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [classes, setClasses] = useState<VPClass[]>([]);
@@ -601,21 +804,26 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     setClassNotes(prev => ({ ...prev, [classId]: notes }));
   }
 
+  const tabLabels: Record<StudyTab, string> = {
+    notes: 'Notes', chat: 'Chat', flashcards: 'Flashcards',
+    quiz: 'Quiz', studyplan: 'Study Plan', podcast: 'Podcast', summary: 'Summary',
+  };
+
   if (!selectedClass) {
     return (
-      <div className="min-h-screen bg-[#1a1a2e]">
-        <header className="bg-[#16213e] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+      <div className="min-h-screen bg-[#0a0a0f]">
+        <header className="bg-[#0f0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#e94560] rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
             </div>
-            <span className="text-xl font-bold text-white">VillagePrep</span>
+            <span className="text-xl font-bold">VillagePrep</span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-white/60 text-sm hidden sm:inline">{user.email}</span>
-            <button onClick={onLogout} className="text-white/60 hover:text-white text-sm transition-colors">
+            <span className="text-gray-400 text-sm hidden sm:inline">{user.email}</span>
+            <button onClick={onLogout} className="text-gray-400 hover:text-white text-sm transition-colors">
               Sign out
             </button>
           </div>
@@ -624,19 +832,19 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         <main className="max-w-5xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-[#16213e] rounded-2xl p-6 border border-white/10">
+              <div className="bg-[#0f0f14] rounded-2xl p-6 border border-white/10">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-white">My Study Materials</h3>
                   <div className="flex gap-2">
                     <button
-                      className="bg-[#0f3460] hover:bg-[#1a4a7a] text-white rounded-lg px-3 py-1.5 text-sm transition-colors"
+                      className="bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg px-3 py-1.5 text-sm transition-colors"
                       onClick={() => fileRef.current?.click()}
                       disabled={fileLoading}
                     >
                       {fileLoading ? 'Loading...' : '+ File'}
                     </button>
                     <button
-                      className="bg-[#e94560] hover:bg-[#d63d56] text-white rounded-lg px-3 py-1.5 text-sm transition-colors"
+                      className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-lg px-3 py-1.5 text-sm transition-colors"
                       onClick={handleYouTube}
                       disabled={ytLoading}
                     >
@@ -649,7 +857,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                     <p className="text-emerald-400 text-sm mb-3">{myDocs.length.toLocaleString()} characters loaded</p>
                     <div className="flex gap-2">
                       <button
-                        className="flex-1 bg-[#e94560] hover:bg-[#d63d56] text-white rounded-lg py-2 text-sm"
+                        className="flex-1 bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-lg py-2 text-sm"
                         onClick={() => {
                           setSelectedClass({ id: 'my-files', name: 'My Files', content: myDocs, testDate: '', teacherEmail: user.email });
                           setMessages([]);
@@ -666,16 +874,16 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                     </div>
                   </div>
                 ) : (
-                  <p className="text-white/40 text-sm">Upload File files or paste content to start studying</p>
+                  <p className="text-gray-500 text-sm">Upload files or paste content to start studying</p>
                 )}
-                <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp" className="hidden" onChange={handleFile} />
+                <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png" className="hidden" onChange={handleFile} />
               </div>
 
-              <div className="bg-[#16213e] rounded-2xl p-6 border border-white/10">
+              <div className="bg-[#0f0f14] rounded-2xl p-6 border border-white/10">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="font-semibold text-white">Folders</h3>
                   <button
-                    className="text-[#e94560] text-sm hover:text-[#d63d56]"
+                    className="text-[#14b8a6] text-sm hover:text-[#0d9488]"
                     onClick={() => setShowFolderModal(true)}
                   >
                     + New Folder
@@ -686,16 +894,16 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                     {folders.map(folder => (
                       <div
                         key={folder.id}
-                        className="bg-[#1a1a2e] rounded-xl p-4 border border-white/10 hover:border-white/20 transition-colors cursor-pointer"
+                        className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-colors cursor-pointer"
                         style={{ borderLeftColor: folder.color, borderLeftWidth: '3px' }}
                       >
                         <div className="font-medium text-white text-sm">{folder.name}</div>
-                        <div className="text-white/40 text-xs mt-1">{folder.classIds?.length || 0} items</div>
+                        <div className="text-gray-500 text-xs mt-1">{folder.classIds?.length || 0} items</div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-white/40 text-sm">No folders yet. Create one to organize your classes.</p>
+                  <p className="text-gray-500 text-sm">No folders yet. Create one to organize your classes.</p>
                 )}
               </div>
 
@@ -704,20 +912,20 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                 {classes.length > 0 ? (
                   <div className="grid gap-4">
                     {classes.map(c => (
-                      <div key={c.id} className="bg-[#16213e] rounded-xl p-5 border border-white/10 hover:border-[#e94560]/50 transition-colors">
+                      <div key={c.id} className="bg-[#0f0f14] rounded-xl p-5 border border-white/10 hover:border-[#14b8a6]/50 transition-colors">
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <div className="font-semibold text-white text-lg">{c.name}</div>
-                            <div className="text-white/50 text-sm">by {c.teacherEmail.split('@')[0]}</div>
+                            <div className="text-gray-500 text-sm">by {c.teacherEmail.split('@')[0]}</div>
                           </div>
-                          <div className="w-10 h-10 bg-[#0f3460] rounded-xl flex items-center justify-center">
-                            <svg className="w-5 h-5 text-[#e94560]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+                            <svg className="w-5 h-5 text-[#14b8a6]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
                           </div>
                         </div>
                         {c.testDate && (
-                          <div className="text-[#e94560] text-sm mb-3 flex items-center gap-1">
+                          <div className="text-[#14b8a6] text-sm mb-3 flex items-center gap-1">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
@@ -725,7 +933,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                           </div>
                         )}
                         <textarea
-                          className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-white/40 outline-none focus:border-[#e94560] transition-colors resize-none mb-3"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors resize-none mb-3"
                           placeholder="Add personal notes..."
                           rows={2}
                           value={classNotes[c.id] || ''}
@@ -734,14 +942,14 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                         />
                         <div className="flex gap-2">
                           <button
-                            className="flex-1 bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-2.5 font-medium transition-colors"
+                            className="flex-1 bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-2.5 font-medium transition-colors"
                             onClick={() => { setSelectedClass(c); setMessages([]); }}
                           >
                             Study Now
                           </button>
                           {!enrolledClasses.includes(c.id) && (
                             <button
-                              className="bg-[#0f3460] hover:bg-[#1a4a7a] text-white rounded-xl px-4 py-2.5 transition-colors"
+                              className="bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl px-4 py-2.5 transition-colors"
                               onClick={() => enroll(c.id)}
                             >
                               Enroll
@@ -752,25 +960,25 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                     ))}
                   </div>
                 ) : (
-                  <p className="text-white/40 text-center py-8">No classes available yet.</p>
+                  <p className="text-gray-500 text-center py-8">No classes available yet.</p>
                 )}
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="bg-[#16213e] rounded-2xl p-6 border border-white/10">
+              <div className="bg-[#0f0f14] rounded-2xl p-6 border border-white/10">
                 <h3 className="font-semibold text-white mb-4">Quick Stats</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
-                    <span className="text-white/60">Classes</span>
+                    <span className="text-gray-400">Classes</span>
                     <span className="text-white font-medium">{classes.length}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-white/60">Enrolled</span>
+                    <span className="text-gray-400">Enrolled</span>
                     <span className="text-white font-medium">{enrolledClasses.length}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-white/60">Folders</span>
+                    <span className="text-gray-400">Folders</span>
                     <span className="text-white font-medium">{folders.length}</span>
                   </div>
                 </div>
@@ -781,10 +989,10 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
 
         {showFolderModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-[#16213e] rounded-2xl p-6 w-full max-w-md border border-white/10">
+            <div className="bg-[#0f0f14] rounded-2xl p-6 w-full max-w-md border border-white/10">
               <h3 className="text-xl font-bold text-white mb-4">Create Folder</h3>
               <input
-                className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 outline-none focus:border-[#e94560] transition-colors mb-4"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors mb-4"
                 placeholder="Folder name"
                 value={newFolderName}
                 onChange={e => setNewFolderName(e.target.value)}
@@ -792,13 +1000,13 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               />
               <div className="flex gap-3">
                 <button
-                  className="flex-1 bg-[#0f3460] hover:bg-[#1a4a7a] text-white rounded-xl py-3 transition-colors"
+                  className="flex-1 bg-white/5 hover:bg-white/10 text-white rounded-xl py-3 transition-colors"
                   onClick={() => setShowFolderModal(false)}
                 >
                   Cancel
                 </button>
                 <button
-                  className="flex-1 bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 transition-colors"
+                  className="flex-1 bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 transition-colors"
                   onClick={createFolder}
                 >
                   Create
@@ -812,55 +1020,52 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a2e]">
-      <header className="bg-[#16213e] border-b border-white/10 px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-[#0a0a0f]">
+      <header className="bg-[#0f0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
         <button
           onClick={() => setSelectedClass(null)}
-          className="text-white hover:text-[#e94560] transition-colors flex items-center gap-2"
+          className="text-white hover:text-[#14b8a6] transition-colors flex items-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Back
         </button>
-        <span className="text-white font-semibold hidden sm:inline">{selectedClass.name}</span>
-        <span className="text-white font-semibold sm:hidden">{selectedClass.name.slice(0, 15)}...</span>
+        <span className="text-white font-semibold hidden sm:inline">{selectedClass?.name}</span>
+        <span className="text-white font-semibold sm:hidden">{selectedClass?.name?.slice(0, 15)}...</span>
         <div className="flex items-center gap-3">
           <button
-            className="bg-[#0f3460] hover:bg-[#1a4a7a] text-white rounded-xl px-3 py-1.5 text-sm transition-colors"
+            className="bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl px-3 py-1.5 text-sm transition-colors"
             onClick={() => fileRef.current?.click()}
             disabled={fileLoading}
           >
             {fileLoading ? 'Loading...' : '+ Notes'}
           </button>
-          <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp" className="hidden" onChange={handleFile} />
-          <button onClick={onLogout} className="text-white/60 hover:text-white text-sm transition-colors">
+          <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png" className="hidden" onChange={handleFile} />
+          <button onClick={onLogout} className="text-gray-400 hover:text-white text-sm transition-colors">
             Sign out
           </button>
         </div>
       </header>
 
       {myDocs && (
-        <div className="bg-[#e94560]/20 border-b border-[#e94560]/30 px-6 py-2 flex items-center justify-between">
+        <div className="bg-[#14b8a6]/20 border-b border-[#14b8a6]/30 px-6 py-2 flex items-center justify-between">
           <span className="text-white/80 text-sm">My notes included ({myDocs.length.toLocaleString()} chars)</span>
           <button onClick={() => setMyDocs('')} className="text-white/60 hover:text-white text-sm">Clear</button>
         </div>
       )}
 
-      <div className="flex gap-2 px-4 py-3 bg-[#16213e] border-b border-white/10 overflow-x-auto">
+      <div className="flex gap-2 px-4 py-3 bg-[#0f0f14] border-b border-white/10 overflow-x-auto">
         {(Object.keys(tabLabels) as StudyTab[]).map(t => (
           <button
             key={t}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               tab === t
-                ? 'bg-[#e94560] text-white'
-                : 'text-white/60 hover:text-white hover:bg-white/5'
+                ? 'bg-[#14b8a6] text-white'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
             onClick={() => loadContent(t)}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tabIcons[t]} />
-            </svg>
             {tabLabels[t]}
           </button>
         ))}
@@ -873,17 +1078,17 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               <div className="flex justify-center py-20"><Spinner /></div>
             ) : notes ? (
               <>
-                <button className="w-full bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('notes')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('notes')}>
                   Regenerate Notes
                 </button>
-                <div className="bg-[#16213e] border border-white/10 rounded-xl p-6">
+                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6">
                   <pre className="text-white text-sm whitespace-pre-wrap font-sans">{notes}</pre>
                 </div>
               </>
             ) : (
               <div className="text-center py-20">
-                <p className="text-white/60 mb-4">Click "Notes" to generate AI-powered study notes</p>
-                <button className="bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl px-6 py-3" onClick={() => loadContent('notes')}>
+                <p className="text-gray-500 mb-4">Click "Notes" to generate AI-powered study notes</p>
+                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('notes')}>
                   Generate Notes
                 </button>
               </div>
@@ -897,16 +1102,16 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               <div className="flex justify-center py-20"><Spinner /></div>
             ) : summary ? (
               <>
-                <button className="w-full bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('summary')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('summary')}>
                   Regenerate Summary
                 </button>
-                <div className="bg-[#16213e] border border-white/10 rounded-xl p-6">
+                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6">
                   <pre className="text-white text-sm whitespace-pre-wrap">{summary}</pre>
                 </div>
               </>
             ) : (
               <div className="text-center py-20">
-                <button className="bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl px-6 py-3" onClick={() => loadContent('summary')}>
+                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('summary')}>
                   Generate Summary
                 </button>
               </div>
@@ -920,27 +1125,16 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               <div className="flex justify-center py-20"><Spinner /></div>
             ) : podcast ? (
               <>
-                <button className="w-full bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('podcast')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('podcast')}>
                   Regenerate Podcast Script
                 </button>
-                <div className="bg-[#16213e] border border-white/10 rounded-xl p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-[#e94560] rounded-full flex items-center justify-center">
-                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                        <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" strokeWidth="2"/>
-                        <line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" strokeWidth="2"/>
-                      </svg>
-                    </div>
-                    <span className="text-white font-semibold">Podcast Script</span>
-                  </div>
+                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6">
                   <pre className="text-white/80 text-sm whitespace-pre-wrap">{podcast}</pre>
                 </div>
               </>
             ) : (
               <div className="text-center py-20">
-                <button className="bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl px-6 py-3" onClick={() => loadContent('podcast')}>
+                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('podcast')}>
                   Generate Podcast Script
                 </button>
               </div>
@@ -952,22 +1146,22 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           <div className="flex flex-col h-[calc(100vh-300px)]">
             <div className="flex-1 overflow-y-auto space-y-3 pb-4">
               {messages.length === 0 && (
-                <p className="text-white/40 text-center mt-20">Ask me anything about {selectedClass.name}...</p>
+                <p className="text-gray-500 text-center mt-20">Ask me anything about {selectedClass?.name}...</p>
               )}
               {messages.map((m, i) => (
                 <div
                   key={i}
                   className={`px-4 py-3 rounded-2xl text-sm max-w-[80%] ${
                     m.role === 'user'
-                      ? 'bg-[#e94560] text-white ml-auto rounded-br-sm'
-                      : 'bg-[#16213e] text-white mr-auto rounded-bl-sm'
+                      ? 'bg-[#14b8a6] text-white ml-auto rounded-br-sm'
+                      : 'bg-[#0f0f14] text-white mr-auto rounded-bl-sm'
                   }`}
                 >
                   {m.content}
                 </div>
               ))}
               {aiLoading && (
-                <div className="bg-[#16213e] text-white px-4 py-3 rounded-2xl rounded-bl-sm max-w-[80%] flex items-center gap-2">
+                <div className="bg-[#0f0f14] text-white px-4 py-3 rounded-2xl rounded-bl-sm max-w-[80%] flex items-center gap-2">
                   <Spinner /> Thinking...
                 </div>
               )}
@@ -976,14 +1170,14 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
             <div className="pt-3 border-t border-white/10">
               <div className="flex gap-2">
                 <input
-                  className="flex-1 bg-[#16213e] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 outline-none focus:border-[#e94560] transition-colors"
+                  className="flex-1 bg-[#0f0f14] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors"
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && sendChat()}
                   placeholder="Ask a question..."
                 />
                 <button
-                  className="bg-[#e94560] hover:bg-[#d63d56] disabled:bg-[#e94560]/50 text-white rounded-xl px-5 py-3 font-medium transition-colors"
+                  className="bg-[#14b8a6] hover:bg-[#0d9488] disabled:opacity-50 text-white rounded-xl px-5 py-3 font-medium transition-colors"
                   onClick={sendChat}
                   disabled={aiLoading || !input.trim()}
                 >
@@ -998,24 +1192,24 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           <div>
             {aiLoading ? <div className="flex justify-center py-20"><Spinner /></div> : flashcards.length === 0 ? (
               <div className="text-center py-20">
-                <button className="bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl px-6 py-3" onClick={() => loadContent('flashcards')}>
+                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('flashcards')}>
                   Generate Flashcards
                 </button>
               </div>
             ) : (
               <>
-                <button className="w-full bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('flashcards')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('flashcards')}>
                   New Cards
                 </button>
                 <div className="grid gap-4">
                   {flashcards.map((fc, i) => (
                     <div
                       key={i}
-                      className="bg-[#16213e] border border-white/10 rounded-xl p-6 cursor-pointer hover:border-[#e94560]/50 transition-colors min-h-[140px] flex items-center justify-center"
+                      className="bg-[#0f0f14] border border-white/10 rounded-xl p-6 cursor-pointer hover:border-[#14b8a6]/50 transition-colors min-h-[140px] flex items-center justify-center"
                       onClick={() => setFlipped(f => f.map((v, j) => j === i ? !v : v))}
                     >
                       <div className="text-center">
-                        <div className="text-white/40 text-xs uppercase tracking-wider mb-2">
+                        <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">
                           {flipped[i] ? 'Answer' : 'Question'}
                         </div>
                         <div className="text-white font-medium">{flipped[i] ? fc.back : fc.front}</div>
@@ -1032,24 +1226,24 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           <div>
             {aiLoading ? <div className="flex justify-center py-20"><Spinner /></div> : quiz.length === 0 ? (
               <div className="text-center py-20">
-                <button className="bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl px-6 py-3" onClick={() => loadContent('quiz')}>
+                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('quiz')}>
                   Generate Quiz
                 </button>
               </div>
             ) : (
               <>
-                <button className="w-full bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('quiz')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('quiz')}>
                   New Quiz
                 </button>
                 {quiz.map((q, qi) => (
-                  <div key={qi} className="bg-[#16213e] border border-white/10 rounded-xl p-5 mb-4">
+                  <div key={qi} className="bg-[#0f0f14] border border-white/10 rounded-xl p-5 mb-4">
                     <p className="text-white font-medium mb-3">{qi + 1}. {q.question}</p>
                     <div className="space-y-2">
                       {q.options.map((opt, oi) => {
                         const answered = answers[qi] !== undefined;
                         const isSelected = answers[qi] === oi;
                         const isCorrect = q.correct === oi;
-                        let bg = 'bg-[#1a1a2e] hover:bg-[#0f3460]';
+                        let bg = 'bg-white/5 hover:bg-white/10';
                         if (answered && isSelected && isCorrect) bg = 'bg-emerald-500/30 border-emerald-500';
                         if (answered && isSelected && !isCorrect) bg = 'bg-red-500/30 border-red-500';
                         if (answered && !isSelected && isCorrect) bg = 'bg-emerald-500/20 border-emerald-500';
@@ -1068,7 +1262,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                       })}
                     </div>
                     {answers[qi] !== undefined && (
-                      <p className="text-white/60 text-sm mt-2">{q.explanation}</p>
+                      <p className="text-gray-500 text-sm mt-2">{q.explanation}</p>
                     )}
                   </div>
                 ))}
@@ -1081,14 +1275,14 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           <div>
             {aiLoading ? <div className="flex justify-center py-20"><Spinner /></div> : studyPlan ? (
               <>
-                <button className="w-full bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('studyplan')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('studyplan')}>
                   Regenerate
                 </button>
-                <pre className="bg-[#16213e] border border-white/10 rounded-xl p-5 text-white text-sm whitespace-pre-wrap">{studyPlan}</pre>
+                <pre className="bg-[#0f0f14] border border-white/10 rounded-xl p-5 text-white text-sm whitespace-pre-wrap">{studyPlan}</pre>
               </>
             ) : (
               <div className="text-center py-20">
-                <button className="bg-[#e94560] hover:bg-[#d63d56] text-white rounded-xl px-6 py-3" onClick={() => loadContent('studyplan')}>
+                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('studyplan')}>
                   Generate Study Plan
                 </button>
               </div>
@@ -1114,6 +1308,8 @@ export default function App() {
     return null;
   });
 
+  const [showLanding, setShowLanding] = useState(true);
+
   function handleLogin(user: User) {
     window.localStorage.setItem('villageprep-user', JSON.stringify(user));
     setUser(user);
@@ -1122,8 +1318,17 @@ export default function App() {
   function handleLogout() {
     window.localStorage.removeItem('villageprep-user');
     setUser(null);
+    setShowLanding(true);
   }
 
+  function handleGetStarted() {
+    setShowLanding(false);
+  }
+
+  if (showLanding && !user) {
+    return <LandingPage onGetStarted={handleGetStarted} />;
+  }
+  
   if (!user) return <LoginScreen onLogin={handleLogin} />;
   if (user.role === 'teacher') return <TeacherPortal user={user} onLogout={handleLogout} />;
   return <StudentPortal user={user} onLogout={handleLogout} />;
