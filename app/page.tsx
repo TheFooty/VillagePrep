@@ -741,6 +741,7 @@ type StudyTab = 'notes' | 'chat' | 'flashcards' | 'quiz' | 'studyplan' | 'podcas
 function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [classes, setClasses] = useState<VPClass[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [enrolledClasses, setEnrolledClasses] = useState<string[]>([]);
   const [classNotes, setClassNotes] = useState<Record<string, string>>({});
   const [selectedClass, setSelectedClass] = useState<VPClass | null>(null);
@@ -1056,11 +1057,76 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                     {folders.map(folder => (
                       <div
                         key={folder.id}
-                        className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-colors cursor-pointer"
+                        className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-colors cursor-pointer group"
                         style={{ borderLeftColor: folder.color, borderLeftWidth: '3px' }}
+                        onClick={() => setSelectedFolder(folder.id === selectedFolder ? null : folder.id)}
                       >
-                        <div className="font-medium text-white text-sm">{folder.name}</div>
+                        <div className="flex items-start justify-between">
+                          <div className="font-medium text-white text-sm">{folder.name}</div>
+                          <button
+                            className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('Delete this folder?')) {
+                                fetch(`/api/folders?email=${encodeURIComponent(user.email)}&folderId=${folder.id}`, { method: 'DELETE' })
+                                  .then(() => setFolders(folders.filter(f => f.id !== folder.id)));
+                              }
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
                         <div className="text-gray-500 text-xs mt-1">{folder.classIds?.length || 0} items</div>
+                        {selectedFolder === folder.id && (
+                          <div className="mt-3 pt-3 border-t border-white/10">
+                            <p className="text-xs text-gray-500 mb-2">Click class to add:</p>
+                            {classes.filter(c => !folder.classIds?.includes(c.id)).map(c => (
+                              <button
+                                key={c.id}
+                                className="block w-full text-left text-xs text-gray-400 hover:text-white py-1"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const newIds = [...(folder.classIds || []), c.id];
+                                  fetch('/api/folders', {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ email: user.email, folderId: folder.id, classIds: newIds }),
+                                  }).then(() => {
+                                    setFolders(folders.map(f => f.id === folder.id ? { ...f, classIds: newIds } : f));
+                                  });
+                                }}
+                              >
+                                + {c.name.slice(0, 20)}
+                              </button>
+                            ))}
+                            {folder.classIds?.length > 0 && (
+                              <>
+                                <p className="text-xs text-gray-500 mt-2 mb-1">In folder:</p>
+                                {classes.filter(c => folder.classIds?.includes(c.id)).map(c => (
+                                  <div key={c.id} className="flex items-center justify-between text-xs text-gray-400 py-1">
+                                    <span>{c.name.slice(0, 15)}</span>
+                                    <button
+                                      className="text-red-400 hover:text-red-300"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const newIds = folder.classIds.filter(id => id !== c.id);
+                                        fetch('/api/folders', {
+                                          method: 'PUT',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({ email: user.email, folderId: folder.id, classIds: newIds }),
+                                        }).then(() => {
+                                          setFolders(folders.map(f => f.id === folder.id ? { ...f, classIds: newIds } : f));
+                                        });
+                                      }}
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
