@@ -1,22 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  const { type, messages, classContent, className, testDate } = await req.json();
+  const { type, messages, classContent, className, testDate, customPrompt } = await req.json();
 
   let systemPrompt = '';
   let userMessage = '';
 
   if (type === 'chat') {
-    systemPrompt = `You are an AI exam prep coach for "${className}" at The Village School. Help students study using ONLY the class material below. You can generate flashcards, quizzes, summaries, and explanations — always grounded in this content. Be clear and student-friendly.\n\nCLASS MATERIAL:\n${classContent}`;
+    systemPrompt = `You are an AI study assistant for "${className}". Help students learn using the provided material. Be clear, concise, and student-friendly. Include examples when helpful.\n\nSTUDY MATERIAL:\n${classContent}`;
+  } else if (type === 'notes') {
+    systemPrompt = `You are an expert note-taker and study guide. Create comprehensive, well-organized notes from the provided material. Use headings, bullet points, and highlight key concepts. Include formulas, definitions, and important details.\n\nFormat with:\n- Clear headings for each topic\n- Bullet points for main ideas\n- Bold for key terms\n- Examples where relevant\n- Tables for comparisons if useful`;
+    userMessage = `Create detailed study notes for "${className}" from this material:\n\n${classContent.slice(0, 8000)}`;
   } else if (type === 'flashcards') {
-    systemPrompt = `You are an exam prep coach. Generate exactly 8 flashcards from the class material. Respond ONLY with a valid JSON array, no preamble, no markdown fences, no explanation. Format: [{"front": "question here", "back": "answer here"}]`;
-    userMessage = `Generate 8 flashcards for "${className}" from this material:\n${classContent.slice(0, 4000)}`;
+    systemPrompt = `You are an expert at creating study flashcards. Generate exactly 10 flashcards that test understanding of key concepts. Respond ONLY with a valid JSON array, no preamble, no markdown fences.\n\nFormat: [{"front": "question", "back": "answer"}]`;
+    userMessage = `Generate 10 flashcards for "${className}" from this material:\n${classContent.slice(0, 4000)}`;
   } else if (type === 'quiz') {
-    systemPrompt = `You are an exam prep coach. Generate exactly 5 multiple choice questions from the class material. Respond ONLY with a valid JSON array, no preamble, no markdown, no explanation. Format: [{"question": "...", "options": ["option A", "option B", "option C", "option D"], "correct": 0, "explanation": "..."}] where correct is the 0-based index of the correct answer.`;
-    userMessage = `Generate 5 multiple choice questions for "${className}" from this material:\n${classContent.slice(0, 4000)}`;
+    systemPrompt = `You are a quiz generator. Create exactly 5 multiple choice questions that test deep understanding. Respond ONLY with valid JSON array, no markdown.\n\nFormat: [{"question": "...", "options": ["A", "B", "C", "D"], "correct": 0, "explanation": "..."}]`;
+    userMessage = `Generate 5 quiz questions for "${className}" from this material:\n${classContent.slice(0, 4000)}`;
   } else if (type === 'studyplan') {
-    systemPrompt = `You are an exam prep coach. Create a practical day-by-day study plan based on the actual topics in the class material. Be specific to the content — name the actual topics. Use plain text, no markdown.`;
-    userMessage = `Create a study plan for "${className}"${testDate ? ` with a test on ${testDate}` : ''}.\n\nMaterial:\n${classContent.slice(0, 3000)}`;
+    systemPrompt = `You are a study planner. Create a practical day-by-day study plan. Be specific to actual topics in the material. Use plain text.`;
+    userMessage = `Create a study plan for "${className}"${testDate ? ` with exam on ${testDate}` : ''}.\n\nMaterial:\n${classContent.slice(0, 3000)}`;
+  } else if (type === 'podcast') {
+    systemPrompt = `You are converting study material into an engaging podcast script. Make it conversational, fun, and easy to understand. The host is explaining to a student.\n\nUse:\n- Short sentences for easy listening\n- Examples and analogies\n- A friendly, encouraging tone`;
+    userMessage = `Create a podcast script (2-3 minutes) explaining the key concepts of "${className}". Focus on the most important points:\n\n${classContent.slice(0, 3000)}`;
+  } else if (type === 'summary') {
+    systemPrompt = `You are a study summarizer. Create a concise summary that captures the essence of the material. Use bullet points and keep it under 300 words.`;
+    userMessage = `Summarize the key points of "${className}" in a concise way:\n\n${classContent.slice(0, 4000)}`;
+  } else if (type === 'custom' && customPrompt) {
+    systemPrompt = customPrompt;
+    userMessage = `Based on this material for "${className}":\n\n${classContent.slice(0, 5000)}`;
   }
 
   const apiMessages = type === 'chat'
@@ -35,7 +47,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'meta-llama/llama-3.3-70b-instruct:free',
         messages: apiMessages,
-        max_tokens: 1500,
+        max_tokens: type === 'notes' ? 3000 : 1500,
       }),
     });
 
