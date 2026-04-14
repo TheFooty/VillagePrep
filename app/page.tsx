@@ -453,12 +453,13 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
       <div className="absolute inset-0 bg-[#0a0a0f]">
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full opacity-10 blur-[120px]" style={{ background: '#14b8a6' }} />
         <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full opacity-10 blur-[100px]" style={{ background: '#6366f1' }} />
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMiI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
       </div>
       
-      <div className="relative z-10 bg-white/5 backdrop-blur-xl rounded-3xl p-8 w-full max-w-[420px] border border-white/10">
+      <div className="relative z-10 card-elevated rounded-3xl p-8 w-full max-w-[420px]">
         <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center shadow-lg shadow-[#14b8a6]/30">
+            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
@@ -469,7 +470,7 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
           {step === 'email' ? (
             <>
               <input
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors"
+                className="input-field w-full text-base"
                 type="email"
                 placeholder="your@email.com"
                 value={email}
@@ -477,7 +478,7 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
                 onKeyDown={e => e.key === 'Enter' && sendCode()}
               />
               <button
-                className="w-full bg-[#14b8a6] hover:bg-[#0d9488] disabled:opacity-50 text-white rounded-xl py-3.5 font-medium transition-colors flex items-center justify-center gap-2"
+                className="btn-primary w-full flex items-center justify-center gap-2"
                 onClick={sendCode}
                 disabled={loading || !email}
               >
@@ -487,7 +488,7 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
           ) : (
             <>
               <input
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-center text-2xl letter-spacing-[0.5em] placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors"
+                className="input-field w-full text-center text-2xl tracking-[0.5em]"
                 type="text"
                 placeholder="000000"
                 value={code}
@@ -496,14 +497,14 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
                 onKeyDown={e => e.key === 'Enter' && verifyCode()}
               />
               <button
-                className="w-full bg-[#14b8a6] hover:bg-[#0d9488] disabled:opacity-50 text-white rounded-xl py-3.5 font-medium transition-colors flex items-center justify-center gap-2"
+                className="btn-primary w-full flex items-center justify-center gap-2"
                 onClick={verifyCode}
                 disabled={loading || code.length < 6}
               >
                 {loading ? <Spinner /> : 'Sign In'}
               </button>
               <button
-                className="w-full text-gray-500 hover:text-white text-sm transition-colors"
+                className="w-full text-gray-500 hover:text-white text-sm transition-colors text-center"
                 onClick={() => { setStep('email'); setCode(''); setError(''); }}
               >
                 ← Change email
@@ -512,7 +513,7 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
           )}
 
           {error && (
-            <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg py-2">{error}</p>
+            <p className="text-red-400 text-sm text-center bg-red-500/10 rounded-lg py-2 animate-fade-in">{error}</p>
           )}
 
           {role && (
@@ -597,30 +598,32 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
 
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
-      <header className="bg-[#0f0f14] border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+      <header className="sticky top-0 z-40 glass border-b border-white/5 px-6 py-4">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center shadow-lg shadow-[#14b8a6]/20">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold">VillagePrep</span>
           </div>
-          <span className="text-xl font-bold">VillagePrep</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-400 text-sm hidden sm:inline">{user.email}</span>
-          <button onClick={onLogout} className="text-gray-400 hover:text-white text-sm transition-colors">
-            Sign out
-          </button>
+          <div className="flex items-center gap-4">
+            <span className="text-gray-500 text-sm hidden sm:inline">{user.email}</span>
+            <button onClick={onLogout} className="text-gray-500 hover:text-white text-sm transition-all hover:bg-white/5 px-3 py-2 rounded-lg">
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-[#0f0f14] rounded-2xl p-8 border border-white/10">
+        <div className="card-elevated rounded-2xl p-8">
           <h2 className="text-2xl font-bold text-white mb-6">Create New Class</h2>
           
           <div className="space-y-4">
             <input
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#14b8a6] transition-colors"
+              className="input-field w-full"
               placeholder="Class name (e.g., AP Chemistry - Period 3)"
               value={name}
               onChange={e => setName(e.target.value)}
@@ -628,14 +631,14 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
 
             <div className="flex flex-col sm:flex-row gap-3">
               <input
-                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#14b8a6] transition-colors"
+                className="input-field flex-1"
                 type="date"
                 value={testDate}
                 onChange={e => setTestDate(e.target.value)}
               />
               <div className="flex gap-2">
                 <button
-                  className="bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl px-4 py-3 transition-colors flex items-center gap-2"
+                  className="btn-secondary flex items-center gap-2"
                   onClick={() => fileRef.current?.click()}
                   disabled={fileLoading}
                 >
@@ -1189,14 +1192,12 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         </div>
       )}
 
-      <div className="flex gap-2 px-4 py-3 bg-[#0f0f14] border-b border-white/10 overflow-x-auto">
-        {(Object.keys(tabLabels) as StudyTab[]).map(t => (
+      <div className="flex gap-2 px-4 py-3 bg-[#0a0a0f]/80 backdrop-blur-sm border-b border-white/5 overflow-x-auto">
+        {(Object.keys(tabLabels) as StudyTab[]).map((t, i) => (
           <button
             key={t}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              tab === t
-                ? 'bg-[#14b8a6] text-white'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            className={`tab-button whitespace-nowrap animate-fade-in stagger-${i + 1} ${
+              tab === t ? 'active' : ''
             }`}
             onClick={() => loadContent(t)}
           >
