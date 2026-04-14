@@ -16,14 +16,57 @@ export async function POST(req: NextRequest) {
 
     const videoId = videoIdMatch[1];
     
-    const { fetchTranscript } = await import('youtube-transcript');
-    const transcript = await fetchTranscript(videoId);
+    let transcript: any[] = [];
+    let errorMsg = '';
+    
+    try {
+      const { fetchTranscript } = await import('youtube-transcript');
+      transcript = await fetchTranscript(videoId);
+    } catch (e: any) {
+      errorMsg = e.message || 'youtube-transcript failed';
+      console.log('youtube-transcript error:', errorMsg);
+    }
     
     if (!transcript || transcript.length === 0) {
-      return NextResponse.json({ error: 'No transcript available for this video' }, { status: 400 });
+      try {
+        const proxyRes = await fetch(`https://youtubetranscript.com/api/v1/transcript/${videoId}`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          },
+        });
+        
+        if (proxyRes.ok) {
+          const xmlText = await proxyRes.text();
+          const jsonText = xmlText
+            .replace(/<text start="([^"]+)" duration="([^"]+)">/g, '{"start":$1,"duration":$2,"text":"')
+            .replace(/<\/text>/g, '"}')
+            .replace(/\n/g, '')
+            .replace(/\[.*?\]/g, '')
+            .replace(/\{"/g, '{"')
+            .replace(/"\}/g, '"}')
+            .replace(/},\{"start/g, ',{"start');
+          
+          const matches = jsonText.match(/\{[^}]+\}/g) || [];
+          transcript = matches.map((m: string) => {
+            try {
+              return JSON.parse(m);
+            } catch {
+              return null;
+            }
+          }).filter(Boolean);
+        }
+      } catch (e2: any) {
+        console.log('fallback also failed:', e2.message);
+      }
     }
 
-    const fullText = transcript.map(t => t.text).join(' ');
+    if (!transcript || transcript.length === 0) {
+      return NextResponse.json({ 
+        error: 'This video does not have captions available. Try a different video or upload a file instead.' 
+      }, { status: 400 });
+    }
+
+    const fullText = transcript.map((t: any) => t.text).join(' ');
     
     return NextResponse.json({ 
       text: fullText,

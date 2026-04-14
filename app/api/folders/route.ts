@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       id: crypto.randomUUID(),
       email, 
       name, 
-      color: color || '#e94560',
+      color: color || '#14b8a6',
       class_ids: classIds || []
     }])
     .select()
