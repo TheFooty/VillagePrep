@@ -752,8 +752,11 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   const [notes, setNotes] = useState('');
   const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
   const [flipped, setFlipped] = useState<boolean[]>([]);
+  const [flashcardCount, setFlashcardCount] = useState<5 | 10 | 20>(10);
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<number[]>([]);
+  const [quizDifficulty, setQuizDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [quizLength, setQuizLength] = useState<5 | 10 | 15>(5);
   const [studyPlan, setStudyPlan] = useState('');
   const [podcast, setPodcast] = useState('');
   const [summary, setSummary] = useState('');
@@ -861,6 +864,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           classContent: combinedContent,
           className: selectedClass?.name || 'General Study',
           testDate: selectedClass?.testDate || '',
+          customPrompt: type === 'flashcards' ? `Generate exactly ${flashcardCount} flashcards. Respond with valid JSON array.` : type === 'quiz' ? `Generate ${quizLength} ${quizDifficulty} multiple choice questions. Make them ${quizDifficulty === 'easy' ? 'straightforward with basic recall' : quizDifficulty === 'medium' ? 'require understanding and application' : 'challenging with complex reasoning and edge cases'}. Respond with valid JSON.` : undefined,
         }),
       });
       const data = await res.json();
@@ -877,31 +881,37 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     }
   }
 
-  async function loadContent(type: StudyTab) {
+  async function loadContent(type: StudyTab, forceRegenerate = false) {
     setTab(type);
-    setAiLoading(true);
-    try {
-      const text = await callAi(type);
-      if (!text) return;
-      
-      if (type === 'notes') setNotes(text);
-      else if (type === 'summary') setSummary(text);
-      else if (type === 'podcast') setPodcast(text);
-      else if (type === 'studyplan') setStudyPlan(text);
-      else if (type === 'flashcards') {
-        const clean = text.replace(/```json|```/g, '').trim();
-        const cards = JSON.parse(clean) as Flashcard[];
-        setFlashcards(cards);
-        setFlipped(new Array(cards.length).fill(false));
-      } else if (type === 'quiz') {
-        const clean = text.replace(/```json|```/g, '').trim();
-        setQuiz(JSON.parse(clean) as QuizQuestion[]);
-        setAnswers([]);
+    
+    if (forceRegenerate) {
+      setAiLoading(true);
+      try {
+        const text = await callAi(type);
+        if (!text) return;
+        
+        if (type === 'notes') setNotes(text);
+        else if (type === 'summary') setSummary(text);
+        else if (type === 'podcast') setPodcast(text);
+        else if (type === 'studyplan') setStudyPlan(text);
+        else if (type === 'flashcards') {
+          const clean = text.replace(/```json|```/g, '').trim();
+          let cards = JSON.parse(clean) as Flashcard[];
+          if (cards.length > flashcardCount) cards = cards.slice(0, flashcardCount);
+          setFlashcards(cards);
+          setFlipped(new Array(cards.length).fill(false));
+        } else if (type === 'quiz') {
+          const clean = text.replace(/```json|```/g, '').trim();
+          let parsed = JSON.parse(clean) as QuizQuestion[];
+          if (parsed.length > quizLength) parsed = parsed.slice(0, quizLength);
+          setQuiz(parsed);
+          setAnswers([]);
+        }
+      } catch (err) {
+        console.error('Error loading content:', err);
+      } finally {
+        setAiLoading(false);
       }
-    } catch (err) {
-      console.error('Error loading content:', err);
-    } finally {
-      setAiLoading(false);
     }
   }
 
@@ -1341,16 +1351,30 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         {tab === 'flashcards' && (
           <div>
             {aiLoading ? <div className="flex justify-center py-20"><Spinner /></div> : flashcards.length === 0 ? (
-              <div className="text-center py-20">
-                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('flashcards')}>
+              <div className="text-center py-20 space-y-6">
+                <div className="flex gap-2 justify-center">
+                  {([5, 10, 20] as const).map(c => (
+                    <button
+                      key={c}
+                      className={`px-4 py-2 rounded-lg text-sm transition-all ${flashcardCount === c ? 'bg-[#14b8a6] text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+                      onClick={() => setFlashcardCount(c)}
+                    >
+                      {c} cards
+                    </button>
+                  ))}
+                </div>
+                <button className="btn-primary" onClick={() => loadContent('flashcards', true)}>
                   Generate Flashcards
                 </button>
               </div>
             ) : (
               <>
-                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('flashcards')}>
-                  New Cards
-                </button>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-400 text-sm">{flashcards.length} cards</span>
+                  <button className="text-[#14b8a6] text-sm hover:text-white" onClick={() => loadContent('flashcards', true)}>
+                    Regenerate
+                  </button>
+                </div>
                 <div className="grid gap-4">
                   {flashcards.map((fc, i) => (
                     <div
@@ -1375,16 +1399,43 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         {tab === 'quiz' && (
           <div>
             {aiLoading ? <div className="flex justify-center py-20"><Spinner /></div> : quiz.length === 0 ? (
-              <div className="text-center py-20">
-                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('quiz')}>
+              <div className="text-center py-20 space-y-6">
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <div className="flex gap-2">
+                    {(['easy', 'medium', 'hard'] as const).map(d => (
+                      <button
+                        key={d}
+                        className={`px-4 py-2 rounded-lg text-sm capitalize transition-all ${quizDifficulty === d ? 'bg-[#14b8a6] text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+                        onClick={() => setQuizDifficulty(d)}
+                      >
+                        {d}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    {([5, 10, 15] as const).map(l => (
+                      <button
+                        key={l}
+                        className={`px-4 py-2 rounded-lg text-sm transition-all ${quizLength === l ? 'bg-[#14b8a6] text-white' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+                        onClick={() => setQuizLength(l)}
+                      >
+                        {l} Q
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button className="btn-primary" onClick={() => loadContent('quiz', true)}>
                   Generate Quiz
                 </button>
               </div>
             ) : (
               <>
-                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('quiz')}>
-                  New Quiz
-                </button>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-gray-400 text-sm">{quiz.length} questions • {quizDifficulty}</span>
+                  <button className="text-[#14b8a6] text-sm hover:text-white" onClick={() => loadContent('quiz', true)}>
+                    Regenerate
+                  </button>
+                </div>
                 {quiz.map((q, qi) => (
                   <div key={qi} className="bg-[#0f0f14] border border-white/10 rounded-xl p-5 mb-4">
                     <p className="text-white font-medium mb-3">{qi + 1}. {q.question}</p>
