@@ -10,32 +10,42 @@ export async function POST(req: NextRequest) {
     }
 
     const fileName = file.name.toLowerCase();
-    
-    if (fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp|heic|heif)$/)) {
-      return NextResponse.json({ 
-        error: 'Image files cannot be parsed. Please use PDF, TXT, MD, CSV, or DOCX files instead.' 
-      }, { status: 400 });
-    }
-    
-    if (!fileName.match(/\.(pdf|txt|md|csv|docx)$/)) {
-      return NextResponse.json({ 
-        error: 'Unsupported file type. Please use PDF, TXT, MD, CSV, or DOCX files.' 
-      }, { status: 400 });
-    }
-
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     let extractedText = '';
 
-    if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
+    // Image files - use OCR
+    if (fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)) {
+      const { createWorker } = await import('tesseract.js');
+      
+      const worker = await createWorker('eng');
+      
+      // Create a Blob from the buffer
+      const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type || 'image/png' });
+      const result = await worker.recognize(blob);
+      extractedText = result.data.text;
+      
+      await worker.terminate();
+    }
+    // PDF files - disabled due to Vercel compatibility
+    else if (fileName.endsWith('.pdf')) {
+      return NextResponse.json({ 
+        error: 'PDF parsing is temporarily unavailable. Please convert your PDF to DOCX format and try again.' 
+      }, { status: 400 });
+    }
+    // Text files
+    else if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
       extractedText = buffer.toString('utf-8');
-    } else if (fileName.endsWith('.docx')) {
+    }
+    // DOCX files
+    else if (fileName.endsWith('.docx')) {
       const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ buffer });
       extractedText = result.value;
-    } else if (fileName.endsWith('.pdf')) {
+    }
+    else {
       return NextResponse.json({ 
-        error: 'PDF parsing is temporarily unavailable. Please convert your PDF to DOCX format and try again.' 
+        error: 'Unsupported file type. Please use PDF, TXT, MD, CSV, DOCX, or image files (JPG, PNG).' 
       }, { status: 400 });
     }
 

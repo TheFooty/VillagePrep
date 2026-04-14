@@ -327,7 +327,7 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
-                      Upload
+                      Upload File
                     </>
                   )}
                 </button>
@@ -346,7 +346,7 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
                   )}
                 </button>
               </div>
-              <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx" className="hidden" onChange={handleFile} />
+              <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp" className="hidden" onChange={handleFile} />
             </div>
 
             <textarea
@@ -666,9 +666,9 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                     </div>
                   </div>
                 ) : (
-                  <p className="text-white/40 text-sm">Upload files or paste content to start studying</p>
+                  <p className="text-white/40 text-sm">Upload File files or paste content to start studying</p>
                 )}
-                <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx" className="hidden" onChange={handleFile} />
+                <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp" className="hidden" onChange={handleFile} />
               </div>
 
               <div className="bg-[#16213e] rounded-2xl p-6 border border-white/10">
@@ -833,7 +833,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           >
             {fileLoading ? 'Loading...' : '+ Notes'}
           </button>
-          <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx" className="hidden" onChange={handleFile} />
+          <input ref={fileRef} type="file" accept=".pdf,.txt,.md,.csv,.docx,.jpg,.jpeg,.png,.gif,.webp,.bmp" className="hidden" onChange={handleFile} />
           <button onClick={onLogout} className="text-white/60 hover:text-white text-sm transition-colors">
             Sign out
           </button>
