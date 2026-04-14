@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { enrollStudent, getStudentClasses, getStudentNotes, setStudentNotes } from '@/lib/store';
+import { enrollStudent, getStudentClasses } from '@/lib/store';
 
 // POST /api/enroll - enroll in a class
 export async function POST(req: NextRequest) {
@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     if (!email || !classId) return NextResponse.json({ error: 'Email and classId required' }, { status: 400 });
     enrollStudent(email, classId);
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 });
     const classes = getStudentClasses(email);
     return NextResponse.json({ classes });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }

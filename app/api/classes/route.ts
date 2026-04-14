@@ -1,33 +1,21 @@
-// Simple in-memory store for development.
-// Classes reset on server restart — connect Supabase for persistence.
-
 import { NextRequest, NextResponse } from 'next/server';
-import { createStore } from '@/lib/store';
-
-interface VPClass {
-  id: string;
-  name: string;
-  content: string;
-  testDate: string;
-  teacherEmail: string;
-}
-
-const classStore = createStore<VPClass>();
-
-export function getClasses(): VPClass[] {
-  return classStore.getAll();
-}
-
-export function addClass(cls: VPClass): void {
-  classStore.add(cls);
-}
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
-  return NextResponse.json(getClasses());
+  const { data, error } = await supabase.from('classes').select('*');
+  if (error) {
+    console.error('Error fetching classes:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json(data || []);
 }
 
 export async function POST(req: NextRequest) {
   const cls = await req.json();
-  addClass(cls);
-  return NextResponse.json({ success: true });
+  const { data, error } = await supabase.from('classes').insert([cls]).select();
+  if (error) {
+    console.error('Error adding class:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ success: true, data });
 }

@@ -60,28 +60,6 @@ function Spinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   );
 }
 
-// ─── Skeleton Loader Components ───────────────────────────────────────────────
-
-function SkeletonCard() {
-  return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm animate-pulse">
-      <div className="h-5 bg-gray-200 rounded w-3/4 mb-3" />
-      <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
-      <div className="h-4 bg-gray-200 rounded w-1/3" />
-    </div>
-  );
-}
-
-function SkeletonFlashcard() {
-  return (
-    <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 min-h-[160px] animate-pulse">
-      <div className="h-4 bg-gray-200 rounded w-1/4 mb-4" />
-      <div className="h-5 bg-gray-200 rounded w-full mb-2" />
-      <div className="h-5 bg-gray-200 rounded w-2/3" />
-    </div>
-  );
-}
-
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 
 function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
@@ -421,9 +399,6 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     chatBottom.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const enrolledClassObjects = classes.filter(c => enrolledClasses.includes(c.id));
-  const availableClasses = classes.filter(c => !enrolledClasses.includes(c.id));
-
   const combinedContent = [
     selectedClass?.content || '',
     myDocs ? `\n\n--- STUDENT'S OWN NOTES ---\n${myDocs}` : '',
@@ -558,7 +533,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               📁 Your Own Materials
             </p>
             <p className="text-sm text-slate-500 mb-3 mt-0">
-              Upload your own notes or PDFs — the AI will use these alongside your teacher's material.
+              Upload your own notes or PDFs — the AI will use these alongside your teacher&apos;s material.
             </p>
             <div className="flex flex-wrap gap-2.5">
               <button
@@ -924,20 +899,18 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
 // ─── App Root ─────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null;
     const stored = window.localStorage.getItem('villageprep-user');
     if (stored) {
       try {
-        setUser(JSON.parse(stored));
+        return JSON.parse(stored);
       } catch {
         window.localStorage.removeItem('villageprep-user');
       }
     }
-    setHydrated(true);
-  }, []);
+    return null;
+  });
 
   function handleLogin(user: User) {
     window.localStorage.setItem('villageprep-user', JSON.stringify(user));
@@ -949,7 +922,6 @@ export default function App() {
     setUser(null);
   }
 
-  if (!hydrated) return null;
   if (!user) return <LoginScreen onLogin={handleLogin} />;
   if (user.role === 'teacher') return <TeacherPortal user={user} onLogout={handleLogout} />;
   return <StudentPortal user={user} onLogout={handleLogout} />;

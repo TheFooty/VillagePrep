@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
     if (!email || !classId) return NextResponse.json({ error: 'Email and classId required' }, { status: 400 });
     const notes = getStudentNotes(email, classId);
     return NextResponse.json({ notes });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     if (!email || !classId) return NextResponse.json({ error: 'Email and classId required' }, { status: 400 });
     setStudentNotes(email, classId, notes || '');
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
   }
 }
