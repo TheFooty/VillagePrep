@@ -6,31 +6,40 @@ function parseMarkdown(text: string): string {
   if (!text) return '';
   let html = text;
   
-  html = html.replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold text-white mt-6 mb-2">$1</h3>');
-  html = html.replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold text-white mt-8 mb-3">$1</h2>');
-  html = html.replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold text-[#14b8a6] mt-8 mb-4">$1</h1>');
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
   
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
-  html = html.replace(/\*(.+?)\*/g, '<em class="text-gray-300">$1</em>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
   
-  html = html.replace(/^\* (.+)$/gm, '<li class="text-gray-300 ml-4">$1</li>');
-  html = html.replace(/^- (.+)$/gm, '<li class="text-gray-300 ml-4">$1</li>');
+  html = html.replace(/^\* (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
   
-  html = html.replace(/\|([^|]+)\|([^|]+)\|([^|]+)\|/g, '<td class="border border-white/20 px-3 py-2 text-gray-300">$1</td>');
-  html = html.replace(/\|([^|]+)\|/g, '<th class="border border-white/20 bg-white/5 px-3 py-2 text-white font-semibold">$1</th>');
+  html = html.replace(/\|(.+)\|/g, '<td>$1</td>');
+  html = html.replace(/\|([^|]+)\|([^|]+)\|([^|]+)\|/g, '<tr><td>$1</td><td>$2</td><td>$3</td></tr>');
   
   html = html.replace(/```[\s\S]*?```/g, '');
   
-  html = html.replace(/\n\n/g, '</p><p class="text-gray-300 mb-3">');
+  html = html.replace(/\n\n/g, '</p><p>');
   html = html.replace(/\n/g, '<br/>');
   
-  return `<div class="text-sm">${html}</div>`;
+  return `<div class="markdown-content">${html}</div>`;
 }
 
 function MarkdownRenderer({ content }: { content: string }) {
   return (
     <div 
-      className="text-sm text-gray-200 leading-relaxed"
+      className="animate-fade-in"
+      dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
+    />
+  );
+}
+
+function MarkdownContent({ content }: { content: string }) {
+  return (
+    <div 
+      className="markdown-content text-sm text-gray-300 leading-relaxed"
       dangerouslySetInnerHTML={{ __html: parseMarkdown(content) }}
     />
   );
@@ -1119,11 +1128,11 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               <div className="flex justify-center py-20"><Spinner /></div>
             ) : notes ? (
               <>
-                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('notes')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4 font-medium hover:shadow-lg hover:shadow-[#14b8a6]/20 transition-all duration-300" onClick={() => loadContent('notes')}>
                   Regenerate Notes
                 </button>
-                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6 overflow-auto">
-                  <MarkdownRenderer content={notes} />
+                <div className="bg-[#16161d] border border-white/10 rounded-2xl p-8 overflow-auto shadow-2xl shadow-black/20">
+                  <MarkdownContent content={notes} />
                 </div>
               </>
             ) : (
@@ -1143,11 +1152,11 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               <div className="flex justify-center py-20"><Spinner /></div>
             ) : summary ? (
               <>
-                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('summary')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4 font-medium hover:shadow-lg hover:shadow-[#14b8a6]/20 transition-all duration-300" onClick={() => loadContent('summary')}>
                   Regenerate Summary
                 </button>
-                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6 overflow-auto">
-                  <MarkdownRenderer content={summary} />
+                <div className="bg-[#16161d] border border-white/10 rounded-2xl p-8 overflow-auto shadow-2xl shadow-black/20">
+                  <MarkdownContent content={summary} />
                 </div>
               </>
             ) : (
@@ -1166,16 +1175,16 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               <div className="flex justify-center py-20"><Spinner /></div>
             ) : podcast ? (
               <>
-                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('podcast')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4 font-medium hover:shadow-lg hover:shadow-[#14b8a6]/20 transition-all duration-300" onClick={() => loadContent('podcast')}>
                   Regenerate Podcast Script
                 </button>
-                <div className="bg-[#0f0f14] border border-white/10 rounded-xl p-6">
-                  <pre className="text-white/80 text-sm whitespace-pre-wrap">{podcast}</pre>
+                <div className="bg-[#16161d] border border-white/10 rounded-2xl p-8 overflow-auto shadow-2xl shadow-black/20">
+                  <MarkdownContent content={podcast} />
                 </div>
               </>
             ) : (
               <div className="text-center py-20">
-                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('podcast')}>
+                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3 font-medium hover:shadow-lg hover:shadow-[#14b8a6]/20 transition-all duration-300" onClick={() => loadContent('podcast')}>
                   Generate Podcast Script
                 </button>
               </div>
@@ -1316,14 +1325,16 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
           <div>
             {aiLoading ? <div className="flex justify-center py-20"><Spinner /></div> : studyPlan ? (
               <>
-                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4" onClick={() => loadContent('studyplan')}>
+                <button className="w-full bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl py-3 mb-4 font-medium hover:shadow-lg hover:shadow-[#14b8a6]/20 transition-all duration-300" onClick={() => loadContent('studyplan')}>
                   Regenerate
                 </button>
-                <pre className="bg-[#0f0f14] border border-white/10 rounded-xl p-5 text-white text-sm whitespace-pre-wrap">{studyPlan}</pre>
+                <div className="bg-[#16161d] border border-white/10 rounded-2xl p-8 overflow-auto shadow-2xl shadow-black/20">
+                  <MarkdownContent content={studyPlan} />
+                </div>
               </>
             ) : (
               <div className="text-center py-20">
-                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3" onClick={() => loadContent('studyplan')}>
+                <button className="bg-[#14b8a6] hover:bg-[#0d9488] text-white rounded-xl px-6 py-3 font-medium hover:shadow-lg hover:shadow-[#14b8a6]/20 transition-all duration-300" onClick={() => loadContent('studyplan')}>
                   Generate Study Plan
                 </button>
               </div>
