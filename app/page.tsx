@@ -117,6 +117,13 @@ interface Folder {
   classIds: string[];
 }
 
+interface StudySet {
+  id: string;
+  user_id: string;
+  title: string;
+  created_at: string;
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -742,6 +749,8 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   const [classes, setClasses] = useState<VPClass[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [studySets, setStudySets] = useState<StudySet[]>([]);
+  const [selectedStudySet, setSelectedStudySet] = useState<StudySet | null>(null);
   const [enrolledClasses, setEnrolledClasses] = useState<string[]>([]);
   const [classNotes, setClassNotes] = useState<Record<string, string>>({});
   const [selectedClass, setSelectedClass] = useState<VPClass | null>(null);
@@ -791,6 +800,9 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
             .then(data => setClassNotes(prev => ({ ...prev, [classId]: data.notes || '' })));
         });
       });
+    fetch(`/api/study-sets?userId=${encodeURIComponent(user.email)}`)
+      .then(r => r.json())
+      .then(data => setStudySets(data.studySets || []));
   }, [user.email]);
 
   useEffect(() => {
@@ -831,6 +843,33 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
     try {
       const text = await parseFile(file);
       setMyDocs(prev => prev ? prev + '\n\n' + text : text);
+      
+      let targetSet = studySets.find(s => s.title === file.name.replace(/\.[^/.]+$/, ''));
+      if (!targetSet) {
+        const setTitle = file.name.replace(/\.[^/.]+$/, '');
+        const res = await fetch('/api/study-sets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: user.email, title: setTitle }),
+        });
+        const data = await res.json();
+        if (data.studySet) {
+          setStudySets([data.studySet, ...studySets]);
+          targetSet = data.studySet;
+        }
+      }
+      if (targetSet) {
+        await fetch('/api/study-set-files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            studySetId: targetSet.id, 
+            fileName: file.name, 
+            content: text,
+            fileType: file.type 
+          }),
+        });
+      }
     } catch (err: any) {
       alert(err.message || 'Could not read file.');
     } finally {
@@ -1172,6 +1211,61 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                   </div>
                 ) : (
                   <p className="text-gray-500 text-sm">No folders yet. Create one to organize your classes.</p>
+                )}
+              </div>
+
+              {/* Study Sets */}
+              <div className="bg-gradient-to-br from-[#0f0f14] to-[#16161d] rounded-2xl p-6 border border-white/5 shadow-xl shadow-black/10">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-white">Study Sets</h3>
+                  <button
+                    className="text-[#14b8a6] text-sm hover:text-[#0d9488] transition-all hover:bg-[#14b8a6]/10 px-3 py-1 rounded-lg"
+                    onClick={async () => {
+                      const title = prompt('Create new Study Set - enter name:');
+                      if (!title) return;
+                      const res = await fetch('/api/study-sets', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId: user.email, title }),
+                      });
+                      const data = await res.json();
+                      if (data.studySet) setStudySets([data.studySet, ...studySets]);
+                    }}
+                  >
+                    + New
+                  </button>
+                </div>
+                {studySets.length > 0 ? (
+                  <div className="grid gap-3">
+                    {studySets.map(set => (
+                      <div
+                        key={set.id}
+                        className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-[#14b8a6]/50 transition-colors cursor-pointer group"
+                        onClick={() => setSelectedStudySet(set.id === selectedStudySet?.id ? null : set)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-white">{set.title}</div>
+                            <div className="text-gray-500 text-xs">{new Date(set.created_at).toLocaleDateString()}</div>
+                          </div>
+                          <button
+                            className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('Delete this Study Set?')) {
+                                fetch(`/api/study-sets?studySetId=${set.id}&userId=${user.email}`, { method: 'DELETE' })
+                                  .then(() => setStudySets(studySets.filter(s => s.id !== set.id)));
+                              }
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No Study Sets. Create one to save your uploads.</p>
                 )}
               </div>
 
