@@ -746,6 +746,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   const [classNotes, setClassNotes] = useState<Record<string, string>>({});
   const [selectedClass, setSelectedClass] = useState<VPClass | null>(null);
   const [myDocs, setMyDocs] = useState<string>('');
+  const [classSearch, setClassSearch] = useState('');
   const [tab, setTab] = useState<StudyTab>('notes');
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -1136,10 +1137,18 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               </div>
 
               <div>
-                <h3 className="text-xl font-bold text-white mb-4">Classes</h3>
-                {classes.length > 0 ? (
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-white">Classes</h3>
+                  <input
+                    className="input-field text-sm w-48"
+                    placeholder="Search classes..."
+                    value={classSearch}
+                    onChange={e => setClassSearch(e.target.value)}
+                  />
+                </div>
+                {classes.filter(c => c.name.toLowerCase().includes(classSearch.toLowerCase())).length > 0 ? (
                   <div className="grid gap-4">
-                    {classes.map(c => (
+                    {classes.filter(c => c.name.toLowerCase().includes(classSearch.toLowerCase())).map(c => (
                       <div key={c.id} className="group bg-gradient-to-br from-[#0f0f14] to-[#16161d] rounded-2xl p-5 border border-white/5 hover:border-[#14b8a6]/50 transition-all hover:shadow-xl hover:shadow-[#14b8a6]/5">
                         <div className="flex items-start justify-between mb-3">
                           <div>
