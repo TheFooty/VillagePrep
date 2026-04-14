@@ -47,6 +47,41 @@ async function parsePdf(file: File): Promise<string> {
   return data.text as string;
 }
 
+// ─── Loading Spinner Component ────────────────────────────────────────────────
+
+function Spinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClasses = {
+    sm: 'w-4 h-4',
+    md: 'w-6 h-6',
+    lg: 'w-8 h-8',
+  };
+  return (
+    <div className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-gray-300 border-t-blue-600`} />
+  );
+}
+
+// ─── Skeleton Loader Components ───────────────────────────────────────────────
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm animate-pulse">
+      <div className="h-5 bg-gray-200 rounded w-3/4 mb-3" />
+      <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
+      <div className="h-4 bg-gray-200 rounded w-1/3" />
+    </div>
+  );
+}
+
+function SkeletonFlashcard() {
+  return (
+    <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 min-h-[160px] animate-pulse">
+      <div className="h-4 bg-gray-200 rounded w-1/4 mb-4" />
+      <div className="h-5 bg-gray-200 rounded w-full mb-2" />
+      <div className="h-5 bg-gray-200 rounded w-2/3" />
+    </div>
+  );
+}
+
 // ─── Login Screen ─────────────────────────────────────────────────────────────
 
 function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
@@ -100,13 +135,13 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
   }
 
   return (
-    <div style={styles.loginWrap}>
-      <div style={styles.loginCard}>
-        <div style={styles.logo}>
-          <span style={styles.logoV}>V</span>
-          <span style={styles.logoText}>illagPrep</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-4 font-sans">
+      <div className="bg-white rounded-3xl p-8 sm:p-10 w-full max-w-[420px] shadow-2xl">
+        <div className="text-3xl font-extrabold mb-2 tracking-tight">
+          <span className="text-blue-600">V</span>
+          <span className="text-slate-900">illagPrep</span>
         </div>
-        <p style={styles.loginSub}>
+        <p className="text-slate-500 text-sm mt-1 mb-7">
           {step === 'email'
             ? 'Sign in with your Village School email'
             : `Code sent to ${email} — check your inbox`}
@@ -115,21 +150,32 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
         {step === 'email' ? (
           <>
             <input
-              style={styles.input}
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans"
               type="email"
               placeholder="you@thevillageschool.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && sendCode()}
+              aria-label="Email address"
             />
-            <button style={styles.btn} onClick={sendCode} disabled={loading || !email}>
-              {loading ? 'Sending…' : 'Send Code →'}
+            <button
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-3.5 text-sm font-semibold cursor-pointer transition-colors mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              onClick={sendCode}
+              disabled={loading || !email}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Spinner size="sm" /> Sending…
+                </span>
+              ) : (
+                'Send Code →'
+              )}
             </button>
           </>
         ) : (
           <>
             <input
-              style={styles.input}
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans"
               type="text"
               placeholder="6-digit code"
               value={code}
@@ -137,12 +183,23 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
               onChange={e => setCode(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && verifyCode()}
               autoFocus
+              aria-label="6-digit verification code"
             />
-            <button style={styles.btn} onClick={verifyCode} disabled={loading || code.length < 6}>
-              {loading ? 'Verifying…' : 'Sign In →'}
+            <button
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-3.5 text-sm font-semibold cursor-pointer transition-colors mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              onClick={verifyCode}
+              disabled={loading || code.length < 6}
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Spinner size="sm" /> Verifying…
+                </span>
+              ) : (
+                'Sign In →'
+              )}
             </button>
             <button
-              style={{ ...styles.btn, background: 'transparent', color: '#6b7280', marginTop: 8 }}
+              className="w-full bg-transparent text-slate-500 hover:text-slate-700 rounded-xl py-2.5 text-sm font-medium cursor-pointer transition-colors mt-2 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
               onClick={() => { setStep('email'); setCode(''); setError(''); }}
             >
               ← Back
@@ -150,10 +207,14 @@ function LoginScreen({ onLogin }: { onLogin: (user: User) => void }) {
           </>
         )}
 
-        {error && <p style={styles.error}>{error}</p>}
+        {error && (
+          <p className="text-red-500 text-sm mt-2.5" role="alert">
+            {error}
+          </p>
+        )}
 
         {role && (
-          <p style={styles.roleBadge}>
+          <p className="mt-3 text-sm text-green-600 bg-green-50 rounded-lg py-2 px-3 text-center">
             {role === 'teacher' ? '🎓 Teacher account detected' : '📚 Student account detected'}
           </p>
         )}
@@ -219,67 +280,92 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
   const myClasses = classes.filter(c => c.teacherEmail === user.email);
 
   return (
-    <div style={styles.portalWrap}>
-      <header style={styles.header}>
-        <span style={styles.headerLogo}>VillagePrep</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={styles.headerEmail}>{user.email}</span>
-          <button style={styles.logoutBtn} onClick={onLogout}>Sign out</button>
+    <div className="min-h-screen bg-slate-50 font-sans">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-7 py-4 flex items-center justify-between sticky top-0 z-50">
+        <span className="text-lg font-extrabold text-slate-900 tracking-tight">VillagePrep</span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-500 hidden sm:inline">{user.email}</span>
+          <button
+            onClick={onLogout}
+            className="bg-transparent border border-gray-200 hover:bg-slate-50 text-slate-600 rounded-lg px-3.5 py-1.5 text-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Sign out"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
-      <div style={styles.portalBody}>
-        <h2 style={styles.sectionTitle}>Add a Class</h2>
+      <main className="max-w-[900px] mx-auto px-6 py-8">
+        <h2 className="text-xl font-bold text-slate-900 mb-4 mt-0">Add a Class</h2>
 
-        <div style={styles.card}>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
           <input
-            style={styles.input}
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans mb-3"
             placeholder="Class name (e.g. AP Chemistry – Period 3)"
             value={name}
             onChange={e => setName(e.target.value)}
+            aria-label="Class name"
           />
 
-          <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
-              style={{ ...styles.input, marginBottom: 0, flex: 1 }}
+              className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans"
               type="date"
               value={testDate}
               onChange={e => setTestDate(e.target.value)}
-              title="Test date (optional)"
+              aria-label="Test date (optional)"
             />
             <button
-              style={{ ...styles.btn, marginTop: 0, whiteSpace: 'nowrap' }}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl px-5 py-3 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 whitespace-nowrap"
               onClick={() => fileRef.current?.click()}
               disabled={pdfLoading}
             >
-              {pdfLoading ? 'Reading PDF…' : '📎 Upload PDF'}
+              {pdfLoading ? (
+                <span className="flex items-center gap-2">
+                  <Spinner size="sm" /> Reading PDF…
+                </span>
+              ) : (
+                '📎 Upload PDF'
+              )}
             </button>
-            <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handlePdf} />
+            <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
           </div>
 
           <textarea
-            style={styles.textarea}
+            className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans mb-3 resize-y"
             placeholder="Paste notes, syllabus, past exam questions, or rubrics here…"
             value={content}
             onChange={e => setContent(e.target.value)}
             rows={10}
+            aria-label="Class content"
           />
 
-          <button style={styles.btn} onClick={saveClass} disabled={saving || !name || !content}>
-            {saved ? '✓ Saved!' : saving ? 'Saving…' : 'Publish Class →'}
+          <button
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl py-3.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            onClick={saveClass}
+            disabled={saving || !name || !content}
+          >
+            {saved ? '✓ Saved!' : saving ? (
+              <span className="flex items-center justify-center gap-2">
+                <Spinner size="sm" /> Saving…
+              </span>
+            ) : 'Publish Class →'}
           </button>
         </div>
 
         {myClasses.length > 0 && (
           <>
-            <h2 style={{ ...styles.sectionTitle, marginTop: 32 }}>Your Classes</h2>
-            <div style={styles.classGrid}>
+            <h2 className="text-xl font-bold text-slate-900 mb-4 mt-8">Your Classes</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {myClasses.map(c => (
-                <div key={c.id} style={styles.classCard}>
-                  <div style={styles.classCardName}>{c.name}</div>
-                  <div style={styles.classCardMeta}>{c.content.length.toLocaleString()} chars</div>
+                <div
+                  key={c.id}
+                  className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="font-bold text-slate-900 text-base mb-1.5">{c.name}</div>
+                  <div className="text-sm text-slate-500">{c.content.length.toLocaleString()} chars</div>
                   {c.testDate && (
-                    <div style={styles.classCardMeta}>
+                    <div className="text-sm text-slate-500 mt-1">
                       📅 Test: {new Date(c.testDate).toLocaleDateString()}
                     </div>
                   )}
@@ -288,7 +374,7 @@ function TeacherPortal({ user, onLogout }: { user: User; onLogout: () => void })
             </div>
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }
@@ -448,78 +534,96 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
 
   if (!selectedClass) {
     return (
-      <div style={styles.portalWrap}>
-        <header style={styles.header}>
-          <span style={styles.headerLogo}>VillagePrep</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={styles.headerEmail}>{user.email}</span>
-            <button style={styles.logoutBtn} onClick={onLogout}>Sign out</button>
+      <div className="min-h-screen bg-slate-50 font-sans">
+        <header className="bg-white border-b border-gray-200 px-4 sm:px-7 py-4 flex items-center justify-between sticky top-0 z-50">
+          <span className="text-lg font-extrabold text-slate-900 tracking-tight">VillagePrep</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-slate-500 hidden sm:inline">{user.email}</span>
+            <button
+              onClick={onLogout}
+              className="bg-transparent border border-gray-200 hover:bg-slate-50 text-slate-600 rounded-lg px-3.5 py-1.5 text-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Sign out"
+            >
+              Sign out
+            </button>
           </div>
         </header>
-        <div style={styles.portalBody}>
-          <h2 style={styles.sectionTitle}>Classes & Study Materials</h2>
+
+        <main className="max-w-[900px] mx-auto px-6 py-8">
+          <h2 className="text-xl font-bold text-slate-900 mb-4 mt-0">Classes & Study Materials</h2>
 
           {/* Own materials upload */}
-          <div style={{ ...styles.card, marginBottom: 24 }}>
-            <p style={{ margin: '0 0 10px', fontWeight: 600, color: '#1e293b' }}>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-6">
+            <p className="font-semibold text-slate-800 mb-2.5 mt-0">
               📁 Your Own Materials
             </p>
-            <p style={{ margin: '0 0 12px', fontSize: 14, color: '#64748b' }}>
+            <p className="text-sm text-slate-500 mb-3 mt-0">
               Upload your own notes or PDFs — the AI will use these alongside your teacher's material.
             </p>
-            <div style={{ display: 'flex', gap: 10 }}>
+            <div className="flex flex-wrap gap-2.5">
               <button
-                style={{ ...styles.btn, marginTop: 0 }}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 onClick={() => fileRef.current?.click()}
                 disabled={pdfLoading}
               >
-                {pdfLoading ? 'Reading…' : '📎 Upload PDF'}
+                {pdfLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Spinner size="sm" /> Reading…
+                  </span>
+                ) : (
+                  '📎 Upload PDF'
+                )}
               </button>
               {myDocs && (
                 <button
-                  style={{ ...styles.btn, marginTop: 0, background: '#ef4444' }}
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                   onClick={() => setMyDocs('')}
+                  aria-label="Clear my notes"
                 >
                   Clear My Notes
                 </button>
               )}
             </div>
             {myDocs && (
-              <p style={{ marginTop: 10, fontSize: 13, color: '#16a34a' }}>
+              <p className="mt-2.5 text-xs text-green-600 font-medium">
                 ✓ {myDocs.length.toLocaleString()} characters loaded from your files
               </p>
             )}
-            <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handlePdf} />
+            <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
           </div>
 
           {classes.length > 0 ? (
-            <div style={styles.classGrid}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {classes.map(c => (
-                <div key={c.id} style={styles.classCard}>
-                  <div style={styles.classCardName}>{c.name}</div>
-                  <div style={styles.classCardMeta}>by {c.teacherEmail.split('@')[0]}</div>
+                <div
+                  key={c.id}
+                  className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="font-bold text-slate-900 text-base mb-1">{c.name}</div>
+                  <div className="text-sm text-slate-500">by {c.teacherEmail.split('@')[0]}</div>
                   {c.testDate && (
-                    <div style={{ ...styles.classCardMeta, color: '#ef4444', fontWeight: 600 }}>
+                    <div className="text-sm text-red-500 font-semibold mt-1">
                       📅 Test: {new Date(c.testDate).toLocaleDateString()}
                     </div>
                   )}
                   <textarea
-                    style={{ ...styles.textarea, marginTop: 12, height: 80, fontSize: 13 }}
+                    className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-xs outline-none transition-colors focus:border-blue-500 font-sans mt-3 h-20 resize-none"
                     placeholder="Add your personal notes for this class…"
                     value={classNotes[c.id] || ''}
                     onChange={e => setClassNotes(prev => ({ ...prev, [c.id]: e.target.value }))}
                     onBlur={() => saveNotes(c.id, classNotes[c.id] || '')}
+                    aria-label={`Personal notes for ${c.name}`}
                   />
-                  <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                  <div className="flex gap-2.5 mt-3">
                     <button
-                      style={{ ...styles.btn, flex: 1 }}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                       onClick={() => { setSelectedClass(c); setMessages([]); }}
                     >
                       Study This Class →
                     </button>
                     {!enrolledClasses.includes(c.id) && (
                       <button
-                        style={{ ...styles.btn, flex: 0.8, background: '#2563eb' }}
+                        className="bg-blue-700 hover:bg-blue-800 text-white rounded-xl px-4 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         onClick={() => enroll(c.id)}
                       >
                         Enroll
@@ -530,12 +634,12 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               ))}
             </div>
           ) : (
-            <p style={{ color: '#94a3b8' }}>No classes yet — ask your teacher to add one.</p>
+            <p className="text-slate-400 text-sm">No classes yet — ask your teacher to add one.</p>
           )}
 
           {myDocs && (
             <button
-              style={{ ...styles.btn, marginTop: 20 }}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mt-5"
               onClick={() => {
                 setSelectedClass({ id: 'personal', name: 'My Notes', content: '', testDate: '', teacherEmail: '' });
               }}
@@ -543,7 +647,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
               Study My Own Notes Only →
             </button>
           )}
-        </div>
+        </main>
       </div>
     );
   }
@@ -551,35 +655,63 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
   // ── Study view ───────────────────────────────────────────────────────────────
 
   return (
-    <div style={styles.portalWrap}>
-      <header style={styles.header}>
-        <button style={styles.backBtn} onClick={() => setSelectedClass(null)}>← Back</button>
-        <span style={styles.headerLogo}>{selectedClass.name}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+    <div className="min-h-screen bg-slate-50 font-sans">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-7 py-4 flex items-center justify-between sticky top-0 z-50">
+        <button
+          onClick={() => setSelectedClass(null)}
+          className="text-base cursor-pointer text-blue-600 hover:text-blue-700 font-semibold bg-transparent border-none p-0 focus:outline-none focus:underline"
+        >
+          ← Back
+        </button>
+        <span className="text-base font-extrabold text-slate-900 tracking-tight hidden sm:inline">{selectedClass.name}</span>
+        <span className="text-base font-extrabold text-slate-900 tracking-tight sm:hidden">{selectedClass.name.length > 20 ? selectedClass.name.slice(0, 20) + '…' : selectedClass.name}</span>
+        <div className="flex items-center gap-2.5">
           <button
-            style={{ ...styles.btn, marginTop: 0, fontSize: 13, padding: '6px 14px' }}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl px-4 py-1.5 text-xs font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             onClick={() => fileRef.current?.click()}
             disabled={pdfLoading}
           >
-            {pdfLoading ? 'Reading…' : '+ My Notes'}
+            {pdfLoading ? (
+              <span className="flex items-center gap-1">
+                <Spinner size="sm" /> Reading…
+              </span>
+            ) : (
+              '+ My Notes'
+            )}
           </button>
-          <input ref={fileRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handlePdf} />
-          <button style={styles.logoutBtn} onClick={onLogout}>Sign out</button>
+          <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handlePdf} />
+          <button
+            onClick={onLogout}
+            className="bg-transparent border border-gray-200 hover:bg-slate-50 text-slate-600 rounded-lg px-3.5 py-1.5 text-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Sign out"
+          >
+            Sign out
+          </button>
         </div>
       </header>
 
       {myDocs && (
-        <div style={styles.myDocsBanner}>
-          📎 Your notes included ({myDocs.length.toLocaleString()} chars)
-          <button onClick={() => setMyDocs('')} style={styles.clearDocsBtn}>✕</button>
+        <div className="bg-blue-50 border-b border-blue-200 px-4 sm:px-7 py-2.5 text-sm text-blue-700 flex items-center gap-3">
+          <span>📎 Your notes included ({myDocs.length.toLocaleString()} chars)</span>
+          <button
+            onClick={() => setMyDocs('')}
+            className="text-blue-600 hover:text-blue-800 bg-transparent border-none text-base cursor-pointer ml-auto focus:outline-none focus:underline"
+            aria-label="Clear my notes"
+          >
+            ✕
+          </button>
         </div>
       )}
 
-      <div style={styles.tabs}>
+      <div className="flex gap-1 px-5 py-3 bg-white border-b border-gray-200 overflow-x-auto">
         {(['chat', 'flashcards', 'quiz', 'studyplan'] as StudyTab[]).map(t => (
           <button
             key={t}
-            style={{ ...styles.tabBtn, ...(tab === t ? styles.tabBtnActive : {}) }}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 whitespace-nowrap ${
+              tab === t
+                ? 'bg-blue-50 text-blue-600'
+                : 'text-slate-500 hover:bg-slate-50'
+            }`}
             onClick={() => {
               if (t === 'flashcards') loadFlashcards();
               else if (t === 'quiz') loadQuiz();
@@ -592,39 +724,59 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         ))}
       </div>
 
-      <div style={styles.studyBody}>
+      <main className="max-w-[900px] mx-auto px-6 py-7">
         {/* CHAT */}
         {tab === 'chat' && (
-          <div style={styles.chatWrap}>
-            <div style={styles.chatMessages}>
+          <div className="flex flex-col h-[calc(100vh-220px)]">
+            <div className="flex-1 overflow-y-auto flex flex-col gap-3 pb-4">
               {messages.length === 0 && (
-                <p style={styles.emptyChat}>Ask anything about {selectedClass.name}…</p>
+                <p className="text-slate-400 text-center mt-20">Ask anything about {selectedClass.name}…</p>
               )}
               {messages.map((m, i) => (
-                <div key={i} style={m.role === 'user' ? styles.userMsg : styles.aiMsg}>
+                <div
+                  key={i}
+                  className={`px-4.5 py-3 rounded-[18px] text-sm leading-relaxed max-w-[85%] ${
+                    m.role === 'user'
+                      ? 'bg-blue-600 text-white self-end rounded-tr-sm'
+                      : 'bg-slate-100 text-slate-900 self-start rounded-tl-sm'
+                  }`}
+                >
                   {m.content}
                 </div>
               ))}
-              {aiLoading && <div style={styles.aiMsg}>Thinking…</div>}
+              {aiLoading && (
+                <div className="bg-slate-100 text-slate-900 px-4 py-3 rounded-[18px] rounded-tl-sm self-start max-w-[85%] flex items-center gap-2">
+                  <Spinner size="sm" /> Thinking…
+                </div>
+              )}
               <div ref={chatBottom} />
             </div>
-            <div style={styles.chatInput}>
-              <div style={styles.quickChips}>
+            <div className="pt-3 border-t border-gray-200">
+              <div className="flex flex-wrap gap-2 mb-2.5">
                 {['Summarize key topics', 'What should I focus on?', 'Make a practice question'].map(q => (
-                  <button key={q} style={styles.chip} onClick={() => { setInput(q); }}>
+                  <button
+                    key={q}
+                    className="bg-slate-100 hover:bg-slate-200 border-none rounded-full px-3.5 py-1.5 text-xs cursor-pointer text-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onClick={() => setInput(q)}
+                  >
                     {q}
                   </button>
                 ))}
               </div>
-              <div style={styles.chatRow}>
+              <div className="flex gap-2.5">
                 <input
-                  style={{ ...styles.input, marginBottom: 0, flex: 1 }}
+                  className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm outline-none transition-colors focus:border-blue-500 font-sans"
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendChat()}
                   placeholder="Ask a question…"
+                  aria-label="Ask a question"
                 />
-                <button style={{ ...styles.btn, marginTop: 0 }} onClick={sendChat} disabled={aiLoading || !input.trim()}>
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  onClick={sendChat}
+                  disabled={aiLoading || !input.trim()}
+                >
                   Send
                 </button>
               </div>
@@ -635,32 +787,42 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         {/* FLASHCARDS */}
         {tab === 'flashcards' && (
           <div>
-            {aiLoading && <p style={styles.loadingText}>Generating flashcards…</p>}
+            {aiLoading && (
+              <div className="flex flex-col items-center gap-3">
+                <Spinner size="lg" />
+                <p className="text-slate-400 text-sm">Generating flashcards…</p>
+              </div>
+            )}
+            {flashcards.length === 0 && !aiLoading && (
+              <p className="text-slate-400 text-center mt-20">No flashcards yet — generate some to start studying!</p>
+            )}
             {flashcards.length > 0 && (
               <>
-                <button style={{ ...styles.btn, marginBottom: 20 }} onClick={loadFlashcards}>
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mb-5"
+                  onClick={loadFlashcards}
+                >
                   🔄 Regenerate
                 </button>
-                <div style={styles.cardGrid}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {flashcards.map((fc, i) => (
                     <div
                       key={i}
-                      style={styles.flashcard}
+                      className="bg-white border-2 border-gray-200 rounded-2xl p-6 min-h-[160px] cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => setFlipped(f => f.map((v, j) => j === i ? !v : v))}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={e => e.key === 'Enter' && setFlipped(f => f.map((v, j) => j === i ? !v : v))}
+                      aria-label={`Flashcard: ${flipped[i] ? 'Answer' : 'Question'}`}
                     >
-                      <div style={styles.flashcardInner}>
-                        {flipped[i] ? (
-                          <>
-                            <div style={styles.flashcardLabel}>Answer</div>
-                            <div style={styles.flashcardText}>{fc.back}</div>
-                          </>
-                        ) : (
-                          <>
-                            <div style={styles.flashcardLabel}>Question</div>
-                            <div style={styles.flashcardText}>{fc.front}</div>
-                          </>
-                        )}
-                        <div style={styles.flashcardHint}>tap to flip</div>
+                      <div className="text-center">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                          {flipped[i] ? 'Answer' : 'Question'}
+                        </div>
+                        <div className="text-base font-semibold text-slate-900 leading-relaxed">
+                          {flipped[i] ? fc.back : fc.front}
+                        </div>
+                        <div className="mt-4 text-xs text-slate-300">tap to flip</div>
                       </div>
                     </div>
                   ))}
@@ -673,28 +835,39 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         {/* QUIZ */}
         {tab === 'quiz' && (
           <div>
-            {aiLoading && <p style={styles.loadingText}>Generating quiz…</p>}
+            {aiLoading && (
+              <div className="flex flex-col items-center gap-3">
+                <Spinner size="lg" />
+                <p className="text-slate-400 text-sm">Generating quiz…</p>
+              </div>
+            )}
+            {quiz.length === 0 && !aiLoading && (
+              <p className="text-slate-400 text-center mt-20">No quiz yet — generate one to test your knowledge!</p>
+            )}
             {quiz.length > 0 && (
               <>
-                <button style={{ ...styles.btn, marginBottom: 20 }} onClick={loadQuiz}>
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mb-5"
+                  onClick={loadQuiz}
+                >
                   🔄 New Quiz
                 </button>
                 {quiz.map((q, qi) => (
-                  <div key={qi} style={styles.quizCard}>
-                    <p style={styles.quizQuestion}>{qi + 1}. {q.question}</p>
-                    <div>
+                  <div key={qi} className="bg-white border border-gray-200 rounded-2xl p-6 mb-4 shadow-sm">
+                    <p className="font-bold text-slate-900 text-base mb-4 mt-0">{qi + 1}. {q.question}</p>
+                    <div className="flex flex-col gap-2">
                       {q.options.map((opt, oi) => {
                         const answered = answers[qi] !== undefined;
                         const isSelected = answers[qi] === oi;
                         const isCorrect = q.correct === oi;
-                        let bg = '#f1f5f9';
-                        if (answered && isSelected && isCorrect) bg = '#dcfce7';
-                        if (answered && isSelected && !isCorrect) bg = '#fee2e2';
-                        if (answered && !isSelected && isCorrect) bg = '#dcfce7';
+                        let bgClass = 'bg-slate-100 hover:bg-slate-200';
+                        if (answered && isSelected && isCorrect) bgClass = 'bg-green-100 border-green-500';
+                        if (answered && isSelected && !isCorrect) bgClass = 'bg-red-100 border-red-500';
+                        if (answered && !isSelected && isCorrect) bgClass = 'bg-green-100 border-green-500';
                         return (
                           <button
                             key={oi}
-                            style={{ ...styles.quizOption, background: bg }}
+                            className={`w-full text-left border border-gray-200 rounded-xl px-4 py-3 text-sm cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 font-sans ${bgClass}`}
                             onClick={() => {
                               if (answered) return;
                               setAnswers(a => { const n = [...a]; n[qi] = oi; return n; });
@@ -706,7 +879,7 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
                       })}
                     </div>
                     {answers[qi] !== undefined && (
-                      <p style={{ fontSize: 14, color: '#475569', marginTop: 8 }}>
+                      <p className="text-sm text-slate-600 mt-2">
                         💡 {q.explanation}
                       </p>
                     )}
@@ -720,20 +893,30 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         {/* STUDY PLAN */}
         {tab === 'studyplan' && (
           <div>
-            {aiLoading && <p style={styles.loadingText}>Building your study plan…</p>}
+            {aiLoading && (
+              <div className="flex flex-col items-center gap-3">
+                <Spinner size="lg" />
+                <p className="text-slate-400 text-sm">Building your study plan…</p>
+              </div>
+            )}
             {studyPlan && (
               <>
-                <button style={{ ...styles.btn, marginBottom: 20 }} onClick={loadStudyPlan}>
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-5 py-2.5 text-sm font-semibold cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 mb-5"
+                  onClick={loadStudyPlan}
+                >
                   🔄 Regenerate
                 </button>
-                <div style={styles.planCard}>
-                  <pre style={styles.planText}>{studyPlan}</pre>
+                <div className="bg-white border border-gray-200 rounded-2xl p-7 shadow-sm">
+                  <pre className="font-sans text-sm text-slate-800 leading-relaxed whitespace-pre-wrap m-0">
+                    {studyPlan}
+                  </pre>
                 </div>
               </>
             )}
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }
@@ -772,381 +955,3 @@ export default function App() {
   return <StudentPortal user={user} onLogout={handleLogout} />;
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles: Record<string, React.CSSProperties> = {
-  loginWrap: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)',
-    fontFamily: '"DM Sans", system-ui, sans-serif',
-  },
-  loginCard: {
-    background: '#fff',
-    borderRadius: 20,
-    padding: '48px 40px',
-    width: '100%',
-    maxWidth: 420,
-    boxShadow: '0 24px 64px rgba(0,0,0,0.3)',
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  logo: {
-    fontSize: 32,
-    fontWeight: 800,
-    marginBottom: 8,
-    letterSpacing: '-1px',
-  },
-  logoV: {
-    color: '#2563eb',
-  },
-  logoText: {
-    color: '#0f172a',
-  },
-  loginSub: {
-    color: '#64748b',
-    fontSize: 15,
-    marginBottom: 28,
-    marginTop: 4,
-  },
-  input: {
-    border: '2px solid #e2e8f0',
-    borderRadius: 10,
-    padding: '12px 16px',
-    fontSize: 15,
-    width: '100%',
-    boxSizing: 'border-box' as const,
-    marginBottom: 12,
-    outline: 'none',
-    fontFamily: 'inherit',
-    transition: 'border-color 0.2s',
-  },
-  btn: {
-    background: '#2563eb',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 10,
-    padding: '13px 20px',
-    fontSize: 15,
-    fontWeight: 600,
-    cursor: 'pointer',
-    width: '100%',
-    marginTop: 4,
-    fontFamily: 'inherit',
-    transition: 'background 0.2s',
-  },
-  error: {
-    color: '#ef4444',
-    fontSize: 14,
-    marginTop: 10,
-  },
-  roleBadge: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#16a34a',
-    background: '#f0fdf4',
-    borderRadius: 8,
-    padding: '8px 12px',
-    textAlign: 'center' as const,
-  },
-  portalWrap: {
-    minHeight: '100vh',
-    background: '#f8fafc',
-    fontFamily: '"DM Sans", system-ui, sans-serif',
-  },
-  header: {
-    background: '#fff',
-    borderBottom: '1px solid #e2e8f0',
-    padding: '14px 28px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    position: 'sticky' as const,
-    top: 0,
-    zIndex: 100,
-  },
-  headerLogo: {
-    fontSize: 20,
-    fontWeight: 800,
-    color: '#0f172a',
-    letterSpacing: '-0.5px',
-  },
-  headerEmail: {
-    fontSize: 14,
-    color: '#64748b',
-  },
-  logoutBtn: {
-    background: 'none',
-    border: '1px solid #e2e8f0',
-    borderRadius: 8,
-    padding: '6px 14px',
-    fontSize: 14,
-    cursor: 'pointer',
-    color: '#475569',
-    fontFamily: 'inherit',
-  },
-  backBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: 15,
-    cursor: 'pointer',
-    color: '#2563eb',
-    fontWeight: 600,
-    fontFamily: 'inherit',
-    padding: 0,
-  },
-  portalBody: {
-    maxWidth: 900,
-    margin: '0 auto',
-    padding: '32px 24px',
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 700,
-    color: '#0f172a',
-    marginBottom: 16,
-    marginTop: 0,
-  },
-  card: {
-    background: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
-    border: '1px solid #e2e8f0',
-  },
-  textarea: {
-    border: '2px solid #e2e8f0',
-    borderRadius: 10,
-    padding: '12px 16px',
-    fontSize: 15,
-    width: '100%',
-    boxSizing: 'border-box' as const,
-    marginBottom: 12,
-    resize: 'vertical' as const,
-    fontFamily: 'inherit',
-    outline: 'none',
-  },
-  classGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-    gap: 16,
-  },
-  classCard: {
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 16,
-    padding: '20px',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-    transition: 'box-shadow 0.2s, transform 0.2s',
-  },
-  classCardName: {
-    fontWeight: 700,
-    fontSize: 16,
-    color: '#0f172a',
-    marginBottom: 6,
-  },
-  classCardMeta: {
-    fontSize: 13,
-    color: '#64748b',
-  },
-  myDocsBanner: {
-    background: '#eff6ff',
-    borderBottom: '1px solid #bfdbfe',
-    padding: '10px 28px',
-    fontSize: 14,
-    color: '#1d4ed8',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-  },
-  clearDocsBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: 16,
-    color: '#3b82f6',
-    marginLeft: 'auto',
-  },
-  tabs: {
-    display: 'flex',
-    gap: 4,
-    padding: '12px 20px',
-    background: '#fff',
-    borderBottom: '1px solid #e2e8f0',
-  },
-  tabBtn: {
-    background: 'none',
-    border: 'none',
-    borderRadius: 8,
-    padding: '8px 16px',
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: 'pointer',
-    color: '#64748b',
-    fontFamily: 'inherit',
-    transition: 'background 0.15s, color 0.15s',
-  },
-  tabBtnActive: {
-    background: '#eff6ff',
-    color: '#2563eb',
-  },
-  studyBody: {
-    maxWidth: 900,
-    margin: '0 auto',
-    padding: '28px 24px',
-  },
-  chatWrap: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    height: 'calc(100vh - 220px)',
-  },
-  chatMessages: {
-    flex: 1,
-    overflowY: 'auto' as const,
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: 12,
-    paddingBottom: 16,
-  },
-  emptyChat: {
-    color: '#94a3b8',
-    textAlign: 'center' as const,
-    marginTop: 80,
-  },
-  userMsg: {
-    background: '#2563eb',
-    color: '#fff',
-    padding: '12px 18px',
-    borderRadius: '18px 18px 6px 18px',
-    maxWidth: '75%',
-    alignSelf: 'flex-end' as const,
-    fontSize: 15,
-    lineHeight: 1.5,
-  },
-  aiMsg: {
-    background: '#f1f5f9',
-    color: '#0f172a',
-    padding: '12px 18px',
-    borderRadius: '18px 18px 18px 6px',
-    maxWidth: '85%',
-    alignSelf: 'flex-start' as const,
-    fontSize: 15,
-    lineHeight: 1.6,
-    whiteSpace: 'pre-wrap' as const,
-  },
-  quickChips: {
-    display: 'flex',
-    gap: 8,
-    marginBottom: 10,
-    flexWrap: 'wrap' as const,
-  },
-  chip: {
-    background: '#f1f5f9',
-    border: 'none',
-    borderRadius: 20,
-    padding: '6px 14px',
-    fontSize: 13,
-    cursor: 'pointer',
-    color: '#475569',
-    fontFamily: 'inherit',
-  },
-  chatInput: {
-    paddingTop: 12,
-    borderTop: '1px solid #e2e8f0',
-  },
-  chatRow: {
-    display: 'flex',
-    gap: 10,
-  },
-  loadingText: {
-    color: '#94a3b8',
-    textAlign: 'center' as const,
-    marginTop: 60,
-  },
-  cardGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-    gap: 16,
-  },
-  flashcard: {
-    background: '#fff',
-    border: '2px solid #e2e8f0',
-    borderRadius: 16,
-    padding: 24,
-    cursor: 'pointer',
-    minHeight: 160,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'box-shadow 0.2s',
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-  },
-  flashcardInner: {
-    textAlign: 'center' as const,
-    width: '100%',
-  },
-  flashcardLabel: {
-    fontSize: 11,
-    fontWeight: 700,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 1,
-    color: '#94a3b8',
-    marginBottom: 12,
-  },
-  flashcardText: {
-    fontSize: 16,
-    fontWeight: 600,
-    color: '#0f172a',
-    lineHeight: 1.5,
-  },
-  flashcardHint: {
-    marginTop: 16,
-    fontSize: 12,
-    color: '#cbd5e1',
-  },
-  quizCard: {
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 16,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-  },
-  quizQuestion: {
-    fontWeight: 700,
-    fontSize: 16,
-    color: '#0f172a',
-    marginBottom: 16,
-    marginTop: 0,
-  },
-  quizOption: {
-    display: 'block',
-    width: '100%',
-    textAlign: 'left' as const,
-    border: '1px solid #e2e8f0',
-    borderRadius: 10,
-    padding: '12px 16px',
-    marginBottom: 8,
-    cursor: 'pointer',
-    fontSize: 15,
-    fontFamily: 'inherit',
-    transition: 'background 0.15s',
-  },
-  planCard: {
-    background: '#fff',
-    border: '1px solid #e2e8f0',
-    borderRadius: 16,
-    padding: 28,
-    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-  },
-  planText: {
-    fontFamily: 'inherit',
-    fontSize: 15,
-    lineHeight: 1.8,
-    color: '#1e293b',
-    whiteSpace: 'pre-wrap' as const,
-    margin: 0,
-  },
-};
