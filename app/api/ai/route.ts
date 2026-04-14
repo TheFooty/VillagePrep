@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         'X-Title': 'VillagePrep',
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-3.3-70b-instruct:free',
+        model: 'google/gemini-2.0-flash-001',
         messages: apiMessages,
         max_tokens: type === 'notes' ? 3000 : 1500,
       }),
@@ -58,12 +58,20 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     
+    console.log('OpenRouter response status:', response.status);
+    console.log('OpenRouter response data:', JSON.stringify(data));
+    
     if (data.error) {
       console.error('OpenRouter error:', data.error);
       return NextResponse.json({ error: data.error.message || 'AI error' }, { status: 500 });
     }
     
-    const text = data.choices?.[0]?.message?.content || 'Something went wrong. Please try again.';
+    if (!data.choices || !data.choices[0]) {
+      console.error('No choices in response:', data);
+      return NextResponse.json({ error: 'No response from AI' }, { status: 500 });
+    }
+    
+    const text = data.choices[0].message?.content || 'Something went wrong. Please try again.';
     return NextResponse.json({ text });
   } catch (err) {
     console.error('AI route catch error:', err);
