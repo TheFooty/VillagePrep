@@ -724,7 +724,14 @@ function StudentPortal({ user, onLogout }: { user: User; onLogout: () => void })
         }),
       });
       const data = await res.json();
+      if (!res.ok || data.error) {
+        alert(data.error || data.text || 'Something went wrong. Please try again.');
+        return null;
+      }
       return data.text as string;
+    } catch (err: any) {
+      alert(err.message || 'Failed to connect to AI');
+      return null;
     } finally {
       setAiLoading(false);
     }
