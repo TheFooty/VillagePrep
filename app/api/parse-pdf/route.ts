@@ -14,30 +14,29 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
     let extractedText = '';
 
-    // Image files - use OCR
     if (fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)) {
       const { createWorker } = await import('tesseract.js');
-      
       const worker = await createWorker('eng');
-      
-      // Create a Blob from the buffer
       const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type || 'image/png' });
       const result = await worker.recognize(blob);
       extractedText = result.data.text;
-      
       await worker.terminate();
     }
-    // PDF files - disabled due to Vercel compatibility
     else if (fileName.endsWith('.pdf')) {
-      return NextResponse.json({ 
-        error: 'PDF parsing is temporarily unavailable. Please convert your PDF to DOCX format and try again.' 
-      }, { status: 400 });
+      try {
+        const pdfParse = require('pdf-parse') as any;
+        const data = pdfParse(buffer);
+        extractedText = data.text;
+      } catch (pdfErr) {
+        console.error('PDF parse error:', pdfErr);
+        return NextResponse.json({ 
+          error: 'Could not read PDF. Try converting to DOCX or TXT format.' 
+        }, { status: 400 });
+      }
     }
-    // Text files
     else if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
       extractedText = buffer.toString('utf-8');
     }
-    // DOCX files
     else if (fileName.endsWith('.docx')) {
       const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ buffer });
@@ -45,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
     else {
       return NextResponse.json({ 
-        error: 'Unsupported file type. Please use PDF, TXT, MD, CSV, DOCX, or image files (JPG, PNG).' 
+        error: 'Unsupported file type. Use PDF, TXT, MD, CSV, DOCX, or images (JPG, PNG).' 
       }, { status: 400 });
     }
 

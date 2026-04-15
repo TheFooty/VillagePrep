@@ -1,0 +1,41 @@
+{
+  "name": "VillagePrep",
+  "short_name": "VillagePrep",
+  "description": "AI-Powered Study Assistant",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0f",
+  "theme_color": "#14b8a6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512", 
+      "type": "image/png"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "My Classes",
+      "url": "/?view=classes",
+      "description": "View your enrolled classes"
+    },
+    {
+      "name": "Study Sets",
+      "url": "/?view=study-sets",
+      "description": "Access your study sets"
+    }
+  ]
+}

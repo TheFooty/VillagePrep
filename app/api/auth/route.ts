@@ -1,20 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSupabaseClient } from '@/lib/auth';
+import crypto from 'crypto';
 
 type Role = 'teacher' | 'student';
 
+const SESSION_SECRET = process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-production';
+const CODE_EXPIRY_MINUTES = 10;
+const MAX_ATTEMPTS_PER_CODE = 3;
+const MAX_CODES_PER_HOUR = 5;
+
 function detectRole(email: string): Role {
-  return email.endsWith('@thevillageschool.com') ? 'teacher' : 'student';
+  const schoolDomains = ['@thevillageschool.com', '@villageprep.com', '@school.edu'];
+  return schoolDomains.some(domain => email.endsWith(domain)) ? 'teacher' : 'student';
+}
+
+function generateCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function hashCode(code: string, email: string): string {
+  return crypto.createHmac('sha256', SESSION_SECRET)
+    .update(`${email}:${code}`)
+    .digest('hex');
 }
 
 async function sendLoginCode(email: string, code: string) {
   const fromAddress = process.env.AUTH_EMAIL_FROM || 'auth@villageprep.net';
-  const body = `<p>Your VillagePrep login code is <strong>${code}</strong>.</p><p>Use it to sign in.</p>`;
-
-  console.log('[auth] sendLoginCode called', { email, code, fromAddress, hasApiKey: !!process.env.RESEND_API_KEY });
 
   if (!process.env.RESEND_API_KEY) {
-    console.warn('[dev auth] RESEND_API_KEY missing; falling back to console output.');
-    console.log(`[dev auth] code for ${email}: ${code}`);
+    console.log(`[dev auth] Code for ${email}: ${code}`);
     return;
   }
 
@@ -22,69 +36,263 @@ async function sendLoginCode(email: string, code: string) {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   try {
-    console.log('[auth] Calling resend.emails.send...');
-    const result = await resend.emails.send({
+    await resend.emails.send({
       from: fromAddress,
       to: email,
       subject: 'Your VillagePrep login code',
-      html: body,
+      html: `<p>Your VillagePrep login code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_EXPIRY_MINUTES} minutes.</p>`
     });
-    console.log('[auth] Resend response:', result);
   } catch (error) {
-    console.error('[auth] Resend send failed:', error);
+    console.error('Resend send failed:', error);
     throw error;
   }
 }
 
+async function storeAuthCode(supabase: any, email: string, code: string): Promise<{ success: boolean; remaining: number }> {
+  const hashed = hashCode(code, email);
+  const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000).toISOString();
+
+  const { count } = await supabase
+    .from('auth_codes')
+    .select('*', { count: 'exact', head: true })
+    .eq('email', email)
+    .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString());
+
+  const currentHour = count || 0;
+  if (currentHour >= MAX_CODES_PER_HOUR) {
+    return { success: false, remaining: 0 };
+  }
+
+  const { error } = await supabase
+    .from('auth_codes')
+    .insert([{ email, code_hash: hashed, expires_at: expiresAt, attempts: 0 }]);
+
+  if (error) {
+    console.error('Failed to store auth code:', error);
+    return { success: false, remaining: 0 };
+  }
+
+  return { success: true, remaining: MAX_CODES_PER_HOUR - currentHour - 1 };
+}
+
+async function verifyCode(supabase: any, email: string, code: string): Promise<{ valid: boolean; error?: string }> {
+  const hashed = hashCode(code, email);
+
+  const { data: codes, error } = await supabase
+    .from('auth_codes')
+    .select('*')
+    .eq('email', email)
+    .eq('code_hash', hashed)
+    .gte('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (error || !codes || codes.length === 0) {
+    return { valid: false, error: 'Invalid or expired code' };
+  }
+
+  const authCode = codes[0];
+  if (authCode.attempts >= MAX_ATTEMPTS_PER_CODE) {
+    return { valid: false, error: 'Too many attempts. Request a new code.' };
+  }
+
+  await supabase
+    .from('auth_codes')
+    .update({ attempts: authCode.attempts + 1 })
+    .eq('id', authCode.id);
+
+  return { valid: true };
+}
+
+function createSessionToken(): string {
+  return crypto.randomUUID();
+}
+
+async function createSession(supabase: any, userId: string, email: string): Promise<string> {
+  const token = createSessionToken();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  await supabase
+    .from('sessions')
+    .insert([{ user_id: userId, session_token: token, expires_at: expiresAt }]);
+
+  return token;
+}
+
 export async function POST(req: NextRequest) {
+  const supabase = getSupabaseClient();
+
   try {
     const { email: rawEmail } = await req.json();
     const email = rawEmail?.trim().toLowerCase();
-    if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 });
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    const code = generateCode();
+    const result = await storeAuthCode(supabase, email, code);
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: 'Too many codes sent. Please wait before requesting another.' },
+        { status: 429 }
+      );
+    }
+
     await sendLoginCode(email, code);
     const role = detectRole(email);
-    const response = NextResponse.json({ role });
-    response.cookies.set('vpLoginEmail', email, {
-      maxAge: 600,
+
+    const response = NextResponse.json({
+      role,
+      message: 'Code sent',
+      remainingCodes: result.remaining
+    });
+
+    response.cookies.set('vpPendingEmail', email, {
+      maxAge: CODE_EXPIRY_MINUTES * 60,
+      httpOnly: true,
       sameSite: 'strict',
       path: '/',
+      secure: process.env.NODE_ENV === 'production'
     });
-    response.cookies.set('vpLoginCode', code, {
-      maxAge: 600,
-      sameSite: 'strict',
-      path: '/',
-    });
+
     return response;
   } catch (err) {
     console.error('Auth POST error', err);
-    return NextResponse.json({ error: 'Unable to send login code' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to send login code' }, { status: 500 });
   }
 }
 
 export async function PUT(req: NextRequest) {
+  const supabase = getSupabaseClient();
+
   try {
     const { email: rawEmail, code: rawCode } = await req.json();
     const email = rawEmail?.trim().toLowerCase();
     const code = rawCode?.trim();
-    if (!email || !code) return NextResponse.json({ error: 'Email and code required' }, { status: 400 });
-    const savedEmail = req.cookies.get('vpLoginEmail')?.value;
-    const expected = req.cookies.get('vpLoginCode')?.value;
-    console.log('[auth] Verify attempt', { email, receivedCode: code, expectedCode: expected, savedEmail });
-    if (!expected || savedEmail !== email || expected !== code) {
-      return NextResponse.json({ error: 'Invalid code' }, { status: 400 });
+
+    if (!email || !code) {
+      return NextResponse.json({ error: 'Email and code are required' }, { status: 400 });
     }
-    const role = detectRole(email);
-    const response = NextResponse.json({ email, role });
-    response.cookies.delete('vpLoginEmail');
-    response.cookies.delete('vpLoginCode');
+
+    const pendingEmail = req.cookies.get('vpPendingEmail')?.value;
+    if (!pendingEmail || pendingEmail !== email) {
+      return NextResponse.json({ error: 'No pending login. Request a new code.' }, { status: 400 });
+    }
+
+    const verifyResult = await verifyCode(supabase, email, code);
+    if (!verifyResult.valid) {
+      return NextResponse.json({ error: verifyResult.error }, { status: 400 });
+    }
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, email, role')
+      .eq('email', email)
+      .limit(1);
+
+    let userData = profiles?.[0];
+
+    if (!userData) {
+      const role = detectRole(email);
+      const id = crypto.randomUUID();
+      const { data: newProfile, error } = await supabase
+        .from('profiles')
+        .insert([{ id, email, role }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Failed to create profile:', error);
+      } else {
+        userData = newProfile;
+      }
+    }
+
+    const sessionToken = await createSession(supabase, userData?.id || email, email);
+
+    const response = NextResponse.json({
+      email,
+      role: userData?.role || detectRole(email),
+      userId: userData?.id
+    });
+
+    response.cookies.set('vpSession', sessionToken, {
+      maxAge: 7 * 24 * 60 * 60,
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      secure: process.env.NODE_ENV === 'production'
+    });
+
+    response.cookies.delete('vpPendingEmail');
+
     return response;
   } catch (err) {
     console.error('Auth PUT error', err);
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    return NextResponse.json({ error: 'Verification failed' }, { status: 400 });
   }
 }
 
-export async function GET() {
-  return NextResponse.json({ message: 'Auth API (dev)' });
+export async function DELETE(req: NextRequest) {
+  const supabase = getSupabaseClient();
+
+  try {
+    const sessionToken = req.cookies.get('vpSession')?.value;
+
+    if (sessionToken) {
+      await supabase
+        .from('sessions')
+        .delete()
+        .eq('session_token', sessionToken);
+    }
+
+    const response = NextResponse.json({ message: 'Logged out' });
+    response.cookies.delete('vpSession');
+    response.cookies.delete('vpPendingEmail');
+
+    return response;
+  } catch (err) {
+    console.error('Auth DELETE error', err);
+    return NextResponse.json({ error: 'Logout failed' }, { status: 500 });
+  }
+}
+
+export async function GET(req: NextRequest) {
+  const supabase = getSupabaseClient();
+
+  try {
+    const sessionToken = req.cookies.get('vpSession')?.value;
+
+    if (!sessionToken) {
+      return NextResponse.json({ authenticated: false });
+    }
+
+    const { data: sessions } = await supabase
+      .from('sessions')
+      .select('*, profiles(email, role)')
+      .eq('session_token', sessionToken)
+      .gte('expires_at', new Date().toISOString())
+      .limit(1);
+
+    if (!sessions || sessions.length === 0) {
+      return NextResponse.json({ authenticated: false });
+    }
+
+    const session = sessions[0];
+    return NextResponse.json({
+      authenticated: true,
+      email: session.profiles?.email,
+      role: session.profiles?.role
+    });
+  } catch (err) {
+    console.error('Auth GET error', err);
+    return NextResponse.json({ authenticated: false });
+  }
 }

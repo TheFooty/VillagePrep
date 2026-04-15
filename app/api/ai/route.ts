@@ -1,86 +1,240 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
-  const { type, messages, classContent, className, testDate, customPrompt, flashcardCount, quizDifficulty, quizLength } = await req.json();
+interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
 
-  let systemPrompt = '';
-  let userMessage = '';
-  const maxChars = 12000;
+interface CacheEntry {
+  response: string;
+  timestamp: number;
+}
 
-  if (type === 'chat') {
-    systemPrompt = `You are an AI study assistant for "${className}". Help students learn using the provided material. Be clear, concise, and student-friendly. Include examples when helpful.`;
-    userMessage = `STUDY MATERIAL:\n${classContent.slice(0, maxChars)}\n\nCHAT HISTORY:\n${messages.slice(-10).map((m: any) => `${m.role}: ${m.content}`).join('\n')}\n\nUser's question:`;
-  } else if (type === 'notes') {
-    systemPrompt = `You are an expert academic note-taker. Create comprehensive, well-organized study notes with clear headings, bullet points, and key concepts highlighted. Use markdown formatting. Include definitions, formulas, and examples where relevant.`;
-    userMessage = `Create detailed study notes for "${className}" (around 2000 words) from this material:\n\n${classContent.slice(0, maxChars)}`;
-  } else if (type === 'flashcards') {
-    const count = flashcardCount || 10;
-    systemPrompt = `You are a expert at creating study flashcards. Generate exactly ${count} flashcards testing key concepts. Return ONLY a valid JSON array with no markdown, no explanations. Each card must have "front" (question) and "back" (answer). Example: [{"front":"What is X?","back":"Y"}]`;
-    userMessage = `Generate ${count} flashcards for "${className}". Focus on definitions, formulas, key concepts, and important facts from this material:\n\n${classContent.slice(0, maxChars)}\n\nIMPORTANT: Return ONLY valid JSON array like: [{"front":"question","back":"answer"},{"front":"question","back":"answer"}]`;
-  } else if (type === 'quiz') {
-    const length = quizLength || 5;
-    const difficulty = quizDifficulty || 'medium';
-    const difficultyInstructions = difficulty === 'easy' ? 'Basic recall questions with straightforward answers' : difficulty === 'hard' ? 'Complex questions requiring analysis and deep understanding' : 'Questions testing understanding and application';
-    systemPrompt = `You are a quiz generator. Create ${length} multiple choice ${difficulty} questions. Return ONLY valid JSON array with no markdown. Each question: {"question":"...","options":["A","B","C","D"],"correct":0-3,"explanation":"..."}`;
-    userMessage = `Generate ${length} ${difficulty} quiz questions for "${className}". ${difficultyInstructions}. Return ONLY valid JSON:\n[{"question":"...","options":["A","B","C","D"],"correct":0,"explanation":"..."}] from:\n${classContent.slice(0, maxChars)}`;
-  } else if (type === 'studyplan') {
-    systemPrompt = `You are a study planner. Create a practical day-by-day study schedule. Use clear day headers and specific topics to cover each day.`;
-    userMessage = `Create a comprehensive study plan for "${className}"${testDate ? ` with exam on ${testDate}` : ''}. Include specific topics, study sessions, and review periods.\n\nMaterial:\n${classContent.slice(0, 6000)}`;
-  } else if (type === 'podcast') {
-    systemPrompt = `You are converting study material into an engaging podcast script. Make it conversational, fun, and easy to understand. Use a host/guest dialogue format.`;
-    userMessage = `Create a 2-3 minute podcast script (host explains to student) about key concepts in "${className}". Focus on the most important points:\n${classContent.slice(0, 6000)}`;
-  } else if (type === 'summary') {
-    systemPrompt = `You are a study summarizer. Create a concise summary that captures the essence of the material in bullet points.`;
-    userMessage = `Summarize the key points of "${className}" (under 500 words):\n\n${classContent.slice(0, maxChars)}`;
-  } else if (type === 'custom' && customPrompt) {
-    systemPrompt = customPrompt;
-    userMessage = `Based on this material for "${className}":\n\n${classContent.slice(0, maxChars)}`;
+const responseCache = new Map<string, CacheEntry>();
+const CACHE_TTL = 60 * 60 * 1000;
+const MAX_CACHE_SIZE = 100;
+
+function getCacheKey(prompt: string): string {
+  return prompt.slice(0, 100);
+}
+
+function getCachedResponse(key: string): { text: string; cached: boolean } | null {
+  const entry = responseCache.get(key);
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
+    return { text: entry.response, cached: true };
+  }
+  responseCache.delete(key);
+  return null;
+}
+
+function setCachedResponse(key: string, response: string): void {
+  if (responseCache.size >= MAX_CACHE_SIZE) {
+    let oldestKey: string | null = null;
+    let oldestTime = Date.now();
+    for (const [k, v] of responseCache) {
+      if (v.timestamp < oldestTime) {
+        oldestTime = v.timestamp;
+        oldestKey = k;
+      }
+    }
+    if (oldestKey) responseCache.delete(oldestKey);
+  }
+  responseCache.set(key, { response, timestamp: Date.now() });
+}
+
+async function* generateStream(prompt: string): AsyncGenerator<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    yield '[Error: GEMINI_API_KEY not configured]';
+    return;
   }
 
-  const fullContent = type === 'chat' ? userMessage : `${systemPrompt}\n\n${userMessage}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
 
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    
-    if (!apiKey) {
-      console.error('No GEMINI_API_KEY found');
-      return NextResponse.json({ error: 'AI not configured. Add GEMINI_API_KEY to Vercel.' }, { status: 500 });
-    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000);
 
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
-    
-    const response = await fetch(url, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: fullContent }] }],
+        contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: type === 'notes' ? 4000 : 2048,
-          responseMimeType: 'text/plain',
+          maxOutputTokens: 4096,
         },
       }),
+      signal: controller.signal,
     });
 
-    const data = await response.json();
-    
-    console.log('AI response status:', response.status);
-    
-    if (!response.ok) {
-      console.error('Gemini API error:', JSON.stringify(data).slice(0, 300));
-      return NextResponse.json({ error: data.error?.message || 'AI request failed', status: response.status });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      const err = await res.text();
+      yield `[Error: ${res.status} - ${err.slice(0, 100)}]`;
+      return;
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
-    if (!text || text.trim().length === 0) {
-      console.error('Empty AI response');
-      return NextResponse.json({ error: 'Empty response from AI. Try again with shorter content.' }, { status: 500 });
+    const reader = res.body?.getReader();
+    if (!reader) {
+      yield '[Error: No response body]';
+      return;
     }
 
-    return NextResponse.json({ text: text.trim() });
-  } catch (err: any) {
-    console.error('AI route error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to connect to AI' }, { status: 500 });
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          try {
+            const json = JSON.parse(data);
+            const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) yield text;
+          } catch {
+            // Skip non-JSON lines
+          }
+        }
+      }
+    }
+  } catch (err) {
+    yield `[Error: ${err instanceof Error ? err.message : 'Request failed'}]`;
+  }
+}
+
+function buildSystemPrompt(type: string, opts: {
+  className: string;
+  testDate?: string;
+  flashcardCount?: number;
+  quizDifficulty?: string;
+  quizLength?: number;
+}): string {
+  const { className, testDate, flashcardCount, quizDifficulty, quizLength } = opts;
+
+  switch (type) {
+    case 'chat':
+      return `You are an AI study assistant for "${className}". Help students learn. Be clear, concise, student-friendly.`;
+    case 'notes':
+      return `Create comprehensive study notes with headings, bullet points, key concepts. Use markdown.`;
+    case 'flashcards':
+      return `Generate exactly ${flashcardCount || 10} flashcards. JSON only: [{"front":"Q","back":"A"}]`;
+    case 'quiz':
+      const diff = quizDifficulty || 'medium';
+      const len = quizLength || 5;
+      const diffTxt = diff === 'easy' ? 'Basic recall' : diff === 'hard' ? 'Complex analysis' : 'Understanding';
+      return `Create ${len} ${diff} questions. ${diffTxt}. JSON: [{"question":"?","options":["A","B","C","D"],"correct":0,"explanation":"?"}]`;
+    case 'studyplan':
+      return `Create day-by-day study schedule.${testDate ? ` Exam: ${testDate}` : ''}`;
+    case 'podcast':
+      return `Create 2-3 min podcast script. Host/guest dialogue.`;
+    case 'summary':
+      return `Summarize key points in bullet points (<500 words).`;
+    default:
+      return `Help students learn "${className}".`;
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const {
+      type = 'chat',
+      messages = [],
+      classContent = '',
+      className = 'General Study',
+      testDate,
+      customPrompt,
+      flashcardCount = 10,
+      quizDifficulty = 'medium',
+      quizLength = 5,
+      stream = false,
+    } = body;
+
+    const maxChars = type === 'chat' ? 16000 : 12000;
+    const content = classContent?.slice(0, maxChars * 2) || '';
+
+    let userMsg = '';
+
+    if (type === 'chat') {
+      const hist = messages.slice(-10).map((m: ChatMessage) => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`).join('\n\n');
+      userMsg = `STUDY MATERIAL:\n${content.slice(0, maxChars)}\n\nCHAT HISTORY:\n${hist}\n\nQuestion:`;
+    } else if (type === 'notes') {
+      userMsg = `Create study notes (~2000 words) for "${className}":\n\n${content.slice(0, maxChars)}`;
+    } else if (type === 'flashcards') {
+      userMsg = `Generate ${flashcardCount} flashcards for "${className}".\n\nMaterial:\n${content.slice(0, maxChars)}\n\nJSON: [{"front":"?","back":"?"}]`;
+    } else if (type === 'quiz') {
+      userMsg = `Generate ${quizLength} ${quizDifficulty} quiz questions for "${className}".\n\nMaterial:\n${content.slice(0, maxChars)}\n\nJSON: [{"question":"?","options":["A","B","C","D"],"correct":0,"explanation":"?"}]`;
+    } else if (type === 'studyplan') {
+      userMsg = `Create study plan for "${className}"${testDate ? ` (exam ${testDate})` : ''}.\n\nMaterial:\n${content.slice(0, 6000)}`;
+    } else if (type === 'podcast') {
+      userMsg = `Create 2-3 min podcast about "${className}".\n\nMaterial:\n${content.slice(0, 6000)}`;
+    } else if (type === 'summary') {
+      userMsg = `Summarize "${className}" (<500 words):\n\n${content.slice(0, maxChars)}`;
+    } else if (type === 'custom' && customPrompt) {
+      userMsg = `${customPrompt}\n\nMaterial:\n${content.slice(0, maxChars)}`;
+    }
+
+    if (!userMsg) {
+      return NextResponse.json({ error: 'Invalid request type' }, { status: 400 });
+    }
+
+    const systemPrompt = buildSystemPrompt(type, { className, testDate, flashcardCount, quizDifficulty, quizLength });
+    const fullPrompt = `${systemPrompt}\n\n${userMsg}`;
+
+    const cacheKey = `${type}:${className}:${userMsg.slice(0, 200)}`;
+    
+    if (!stream) {
+      const cached = getCachedResponse(cacheKey);
+      if (cached) {
+        return NextResponse.json({ text: cached.text, cached: true });
+      }
+
+      let fullResponse = '';
+      for await (const chunk of generateStream(fullPrompt)) {
+        fullResponse += chunk;
+      }
+
+      if (fullResponse) {
+        setCachedResponse(cacheKey, fullResponse);
+      }
+
+      return NextResponse.json({ text: fullResponse });
+    }
+
+    const responseStream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of generateStream(fullPrompt)) {
+            controller.enqueue(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+          }
+          controller.enqueue('data: [DONE]\n\n');
+        } catch (err) {
+          controller.enqueue(`data: ${JSON.stringify({ error: err instanceof Error ? err.message : 'Error' })}\n\n`);
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new NextResponse(responseStream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'AI request failed';
+    console.error('AI route error:', msg);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
