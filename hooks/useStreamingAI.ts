@@ -1,0 +1,109 @@
+'use client';
+
+import { useState, useRef, useCallback } from 'react';
+
+interface UseStreamingAIProps {
+  onChunk?: (chunk: string) => void;
+  onComplete?: (fullText: string) => void;
+  onError?: (error: Error) => void;
+}
+
+export function useStreamingAI({ onChunk, onComplete, onError }: UseStreamingAIProps = {}) {
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamedText, setStreamedText] = useState('');
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const streamResponse = useCallback(
+    async (body: object) => {
+      setIsStreaming(true);
+      setStreamedText('');
+      
+      abortControllerRef.current = new AbortController();
+      
+      try {
+        const response = await fetch('/api/ai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...body, stream: true }),
+          signal: abortControllerRef.current.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('No response body');
+        }
+
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              
+              if (data === '[DONE]') {
+                onComplete?.(fullText);
+                setIsStreaming(false);
+                return fullText;
+              }
+
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.text) {
+                  fullText += parsed.text;
+                  setStreamedText(fullText);
+                  onChunk?.(parsed.text);
+                }
+                if (parsed.error) {
+                  throw new Error(parsed.error);
+                }
+              } catch (e) {
+                // Handle non-JSON data (plain text chunks)
+                if (data && data !== '[DONE]') {
+                  fullText += data;
+                  setStreamedText(fullText);
+                  onChunk?.(data);
+                }
+              }
+            }
+          }
+        }
+
+        onComplete?.(fullText);
+        return fullText;
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          return null;
+        }
+        onError?.(error as Error);
+        throw error;
+      } finally {
+        setIsStreaming(false);
+      }
+    },
+    [onChunk, onComplete, onError]
+  );
+
+  const abort = useCallback(() => {
+    abortControllerRef.current?.abort();
+    setIsStreaming(false);
+  }, []);
+
+  return {
+    streamResponse,
+    abort,
+    isStreaming,
+    streamedText,
+  };
+}

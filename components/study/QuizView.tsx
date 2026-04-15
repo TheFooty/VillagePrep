@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { QuizQuestion } from '@/types';
 import { Button } from '@/components/ui/Button';
+import { useKeyboardShortcuts, KeyboardShortcutsHelp } from '@/hooks/useKeyboardShortcuts';
 
 interface QuizViewProps {
   questions: QuizQuestion[];
@@ -26,14 +27,18 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
   }, [timeLeft, showResult]);
 
   function handleAnswer(index: number) {
-    const newAnswers = [...answers, index];
+    const newAnswers = [...answers];
+    newAnswers[current] = index;
     setAnswers(newAnswers);
 
-    if (current < questions.length - 1) {
-      setCurrent(current + 1);
-    } else {
-      handleComplete(newAnswers);
-    }
+    // Auto-advance after a short delay
+    setTimeout(() => {
+      if (current < questions.length - 1) {
+        setCurrent(current + 1);
+      } else {
+        handleComplete(newAnswers);
+      }
+    }, 500);
   }
 
   function handleComplete(finalAnswers?: number[]) {
@@ -41,6 +46,12 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
     const score = final.filter((a, i) => a === questions[i].correct).length;
     setShowResult(true);
     onComplete?.(score, questions.length, final);
+  }
+
+  function handleNext() {
+    if (current < questions.length - 1 && answers[current] !== undefined) {
+      setCurrent(current + 1);
+    }
   }
 
   function formatTime(seconds: number): string {
@@ -53,6 +64,14 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
 
   const question = questions[current];
   const isComplete = showResult || answers.length >= questions.length;
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onAnswer: handleAnswer,
+    onNext: handleNext,
+    isQuizMode: true,
+    currentOptions: question.options.length,
+  });
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -128,6 +147,9 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
           </Button>
         </div>
       )}
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp mode="quiz" />
     </div>
   );
 }
