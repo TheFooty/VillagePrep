@@ -75,7 +75,7 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
       </div>
 
       <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
-        <h3 className="text-xl text-white font-medium mb-6">{question.question}</h3>
+        <h3 className="text-xl text-white font-medium mb-6 break-words">{question.question}</h3>
 
         <div className="space-y-3">
           {question.options.map((option, i) => {
@@ -96,7 +96,7 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
                 key={i}
                 onClick={() => !answered && handleAnswer(i)}
                 disabled={answered || showResult}
-                className={`w-full text-left border rounded-xl px-4 py-3 text-white transition-colors ${bg}`}
+                className={`w-full text-left border rounded-xl px-4 py-3 text-white transition-colors break-words ${bg}`}
               >
                 {option}
               </button>

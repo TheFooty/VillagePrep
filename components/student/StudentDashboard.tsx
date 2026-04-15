@@ -282,7 +282,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           <div className="space-y-4">
             {messages.map((m, i) => (
               <div key={i} className={`p-4 rounded-xl ${m.role === 'user' ? 'bg-[#14b8a6]/10 ml-8' : 'bg-white/5 mr-8'}`}>
-                <p className="text-white whitespace-pre-wrap">{m.content}</p>
+                <p className="text-white whitespace-pre-wrap break-words overflow-wrap-anywhere">{m.content}</p>
               </div>
             ))}
             <div ref={chatBottom} />

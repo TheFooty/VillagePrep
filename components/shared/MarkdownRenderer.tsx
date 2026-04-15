@@ -27,7 +27,7 @@ export function MarkdownRenderer({ content, className = '' }: MarkdownRendererPr
           blockquote: ({children}) => <blockquote className="border-l-4 border-[#14b8a6] pl-4 italic text-gray-400 my-4">{children}</blockquote>,
           table: ({children}) => <table className="w-full border-collapse my-4">{children}</table>,
           th: ({children}) => <th className="border border-white/20 bg-white/5 px-4 py-2 text-left text-white">{children}</th>,
-          td: ({children}) => <td className="border border-white/10 px-4 py-2 text-gray-300">{children}</td>,
+          td: ({children}) => <td className="border border-white/10 px-4 py-2 text-gray-300 break-words">{children}</td>,
         }}
       >
         {content}

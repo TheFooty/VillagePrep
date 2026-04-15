@@ -53,7 +53,7 @@ export function FlashcardView({ cards, onMaster }: FlashcardViewProps) {
         className="min-h-[200px] bg-white/5 border border-white/10 rounded-2xl p-8 flex items-center justify-center cursor-pointer mb-6"
         onClick={() => setFlipped(!flipped)}
       >
-        <p className="text-xl text-white text-center">{flipped ? card.back : card.front}</p>
+        <p className="text-xl text-white text-center break-words max-w-full">{flipped ? card.back : card.front}</p>
       </div>
 
       {flipped && (

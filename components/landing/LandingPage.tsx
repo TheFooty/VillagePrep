@@ -44,12 +44,12 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           AI-Powered Study Tools
         </div>
         
-        <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight animate-slide-in" style={{ fontFamily: 'Libre Baskerville, Georgia, serif' }}>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight animate-slide-in break-words" style={{ fontFamily: 'Libre Baskerville, Georgia, serif' }}>
           Master Any Subject with{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14b8a6] to-[#0d9488]">AI</span>
         </h1>
         
-        <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto animate-fade-in stagger-2">
+        <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-8 max-w-2xl mx-auto animate-fade-in stagger-2 break-words">
           Generate flashcards, quizzes, study notes, and podcasts from your class materials. 
           VillagePrep uses AI to help you learn smarter, not harder.
         </p>
@@ -68,7 +68,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       </div>
 
       {/* Features Preview */}
-      <div className="mt-20 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl animate-fade-in stagger-4">
+      <div className="mt-16 sm:mt-20 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto px-4 animate-fade-in stagger-4">
         {[
           { icon: '🎴', label: 'Flashcards', desc: 'AI-generated' },
           { icon: '❓', label: 'Quizzes', desc: 'Test yourself' },
