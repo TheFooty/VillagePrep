@@ -6,8 +6,8 @@ type Role = 'teacher' | 'student';
 
 const SESSION_SECRET = process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-production';
 const CODE_EXPIRY_MINUTES = 10;
-const MAX_ATTEMPTS_PER_CODE = 3;
-const MAX_CODES_PER_HOUR = 5;
+const MAX_ATTEMPTS_PER_CODE = 5;
+const MAX_CODES_PER_HOUR = 20;
 
 function detectRole(email: string): Role {
   const schoolDomains = ['@thevillageschool.com', '@villageprep.com', '@school.edu'];
@@ -52,14 +52,22 @@ async function storeAuthCode(supabase: any, email: string, code: string): Promis
   const hashed = hashCode(code, email);
   const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
+  // Clean up expired codes first
+  await supabase
+    .from('auth_codes')
+    .delete()
+    .lt('expires_at', new Date().toISOString());
+
+  // Count codes sent in last 15 minutes (not hour) - more lenient
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
   const { count } = await supabase
     .from('auth_codes')
     .select('*', { count: 'exact', head: true })
     .eq('email', email)
-    .gte('created_at', new Date(Date.now() - 60 * 60 * 1000).toISOString());
+    .gte('created_at', fifteenMinutesAgo);
 
-  const currentHour = count || 0;
-  if (currentHour >= MAX_CODES_PER_HOUR) {
+  const recentCount = count || 0;
+  if (recentCount >= 5) { // 5 codes per 15 minutes
     return { success: false, remaining: 0 };
   }
 
@@ -72,7 +80,7 @@ async function storeAuthCode(supabase: any, email: string, code: string): Promis
     return { success: false, remaining: 0 };
   }
 
-  return { success: true, remaining: MAX_CODES_PER_HOUR - currentHour - 1 };
+  return { success: true, remaining: 5 - recentCount - 1 };
 }
 
 async function verifyCode(supabase: any, email: string, code: string): Promise<{ valid: boolean; error?: string }> {

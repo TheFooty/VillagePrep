@@ -242,32 +242,38 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
       )}
 
       {/* File Upload */}
-      <div className="bg-[#14b8a6]/10 border-b border-[#14b8a6]/20 px-6 py-3">
-        <label className="cursor-pointer px-4 py-2 rounded-lg bg-[#14b8a6]/20 text-[#14b8a6] hover:bg-[#14b8a6]/30 transition-colors text-sm">
-          Upload Material
-          <input type="file" className="hidden" onChange={handleFile} accept=".txt,.md,.docx,.pdf,.csv" />
-        </label>
-        {myDocs && (
-          <span className="ml-3 text-gray-400 text-sm">{myDocs.length.toLocaleString()} chars</span>
-        )}
+      <div className="bg-[#14b8a6]/10 border-b border-[#14b8a6]/20 px-4 sm:px-6 py-4">
+        <div className="max-w-4xl mx-auto flex items-center gap-4">
+          <label className="cursor-pointer px-4 py-2.5 rounded-lg bg-[#14b8a6]/20 text-[#14b8a6] hover:bg-[#14b8a6]/30 transition-colors text-sm font-medium">
+            Upload Material
+            <input type="file" className="hidden" onChange={handleFile} accept=".txt,.md,.docx,.pdf,.csv" />
+          </label>
+          {myDocs && (
+            <span className="text-gray-400 text-sm">{myDocs.length.toLocaleString()} characters uploaded</span>
+          )}
+        </div>
       </div>
 
       {/* Study Tabs */}
-      <div className="flex gap-2 px-4 py-3 bg-[#0a0a0f]/80 backdrop-blur-sm border-b border-white/5 overflow-x-auto">
-        {(Object.keys(tabLabels) as StudyTab[]).map((t) => (
-          <button
-            key={t}
-            className={`px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap ${
-              tab === t ? 'bg-[#14b8a6] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-            onClick={() => loadContent(t)}
-          >
-            {tabLabels[t]}
-          </button>
-        ))}
+      <div className="bg-[#0a0a0f]/80 backdrop-blur-sm border-b border-white/5 overflow-x-auto">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="flex gap-2 py-4">
+            {(Object.keys(tabLabels) as StudyTab[]).map((t) => (
+              <button
+                key={t}
+                className={`px-4 py-2.5 rounded-lg text-sm transition-colors whitespace-nowrap font-medium ${
+                  tab === t ? 'bg-[#14b8a6] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+                onClick={() => loadContent(t)}
+              >
+                {tabLabels[t]}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         {aiLoading ? (
           <div className="flex justify-center py-20">
             <Spinner size="lg" />

@@ -38,18 +38,18 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full opacity-[0.05] blur-[150px]" style={{ background: '#0d9488' }} />
 
       {/* Content */}
-      <div className="relative z-10 max-w-3xl text-center px-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#14b8a6]/10 border border-[#14b8a6]/20 text-[#14b8a6] text-sm mb-6 animate-fade-in">
+      <div className="relative z-10 max-w-3xl text-center px-6">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#14b8a6]/10 border border-[#14b8a6]/20 text-[#14b8a6] text-sm mb-8 animate-fade-in">
           <span className="w-2 h-2 rounded-full bg-[#14b8a6] animate-pulse flex-shrink-0" />
           AI-Powered Study Tools
         </div>
         
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight animate-slide-in break-words overflow-wrap-anywhere" style={{ fontFamily: 'Libre Baskerville, Georgia, serif' }}>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight animate-slide-in break-words overflow-wrap-anywhere px-4" style={{ fontFamily: 'Libre Baskerville, Georgia, serif' }}>
           Master Any Subject with{' '}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14b8a6] to-[#0d9488]">AI</span>
         </h1>
         
-        <p className="text-sm sm:text-base md:text-lg text-gray-400 mb-8 max-w-2xl mx-auto animate-fade-in stagger-2 break-words overflow-wrap-anywhere">
+        <p className="text-base sm:text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto animate-fade-in stagger-2 break-words overflow-wrap-anywhere leading-relaxed">
           Generate flashcards, quizzes, study notes, and podcasts from your class materials. 
           VillagePrep uses AI to help you learn smarter, not harder.
         </p>
@@ -57,33 +57,33 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in stagger-3">
           <button
             onClick={onGetStarted}
-            className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#14b8a6] to-[#0d9488] text-white font-semibold text-lg hover:shadow-lg hover:shadow-[#14b8a6]/30 hover:-translate-y-1 transition-all duration-300"
+            className="px-10 py-4 rounded-xl bg-gradient-to-r from-[#14b8a6] to-[#0d9488] text-white font-semibold text-lg hover:shadow-lg hover:shadow-[#14b8a6]/30 hover:-translate-y-1 transition-all duration-300"
           >
             Get Started Free
           </button>
-          <button className="px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-semibold text-lg hover:bg-white/10 hover:border-[#14b8a6]/30 transition-all">
+          <button className="px-10 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-semibold text-lg hover:bg-white/10 hover:border-[#14b8a6]/30 transition-all">
             View Demo
           </button>
         </div>
       </div>
 
       {/* Features Preview */}
-      <div className="mt-16 sm:mt-20 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6 max-w-4xl mx-auto px-4 animate-fade-in stagger-4">
+      <div className="mt-20 sm:mt-24 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto px-6 animate-fade-in stagger-4">
         {[
           { icon: '🎴', label: 'Flashcards', desc: 'AI-generated' },
           { icon: '❓', label: 'Quizzes', desc: 'Test yourself' },
           { icon: '📝', label: 'Notes', desc: 'Auto-summarized' },
           { icon: '💬', label: 'Chat', desc: 'Ask anything' },
         ].map((feature, i) => (
-          <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4 text-center hover:border-[#14b8a6]/30 transition-colors overflow-hidden">
-            <div className="text-xl sm:text-2xl mb-2">{feature.icon}</div>
-            <div className="text-white font-medium text-sm sm:text-base break-words overflow-wrap-anywhere">{feature.label}</div>
-            <div className="text-gray-500 text-xs sm:text-sm break-words overflow-wrap-anywhere">{feature.desc}</div>
+          <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-5 sm:p-6 text-center hover:border-[#14b8a6]/30 transition-colors overflow-hidden">
+            <div className="text-2xl sm:text-3xl mb-3">{feature.icon}</div>
+            <div className="text-white font-medium text-base sm:text-lg break-words overflow-wrap-anywhere">{feature.label}</div>
+            <div className="text-gray-500 text-sm sm:text-base break-words overflow-wrap-anywhere mt-1">{feature.desc}</div>
           </div>
         ))}
       </div>
 
-      <footer className="absolute bottom-6 text-gray-500 text-sm">
+      <footer className="absolute bottom-8 text-gray-500 text-sm">
         © 2024 VillagePrep • Built for students, by students
       </footer>
     </div>

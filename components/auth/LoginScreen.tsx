@@ -70,13 +70,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full opacity-[0.06] blur-[120px]" style={{ background: '#14b8a6' }} />
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] mb-4">
-            <span className="text-white text-2xl font-bold">V</span>
+      <div className="relative z-10 w-full max-w-md px-6">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] mb-6">
+            <span className="text-white text-3xl font-bold">V</span>
           </div>
-          <h2 className="text-2xl font-bold text-white">Welcome to VillagePrep</h2>
-          <p className="text-gray-400 mt-2">
+          <h2 className="text-3xl font-bold text-white mb-3">Welcome to VillagePrep</h2>
+          <p className="text-gray-400 text-lg">
             {step === 'email' ? 'Enter your email to sign in' : 'Enter the code sent to your email'}
           </p>
         </div>
@@ -121,13 +121,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           )}
 
           {error && (
-            <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
+            <div className="mt-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
               {error}
             </div>
           )}
         </div>
 
-        <p className="text-gray-500 text-xs text-center mt-6">
+        <p className="text-gray-500 text-sm text-center mt-8">
           By continuing, you agree to our Terms of Service
         </p>
       </div>
