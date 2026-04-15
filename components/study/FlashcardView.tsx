@@ -37,8 +37,8 @@ export function FlashcardView({ cards, onMaster }: FlashcardViewProps) {
   return (
     <div className="max-w-xl mx-auto">
       <div className="mb-4">
-        <div className="flex justify-between text-sm text-gray-400 mb-2">
-          <span>{current + 1} / {cards.length}</span>
+        <div className="flex justify-between text-sm text-gray-400 mb-2 min-w-0">
+          <span className="truncate">{current + 1} / {cards.length}</span>
           <span>{mastery}% mastery</span>
         </div>
         <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -50,10 +50,10 @@ export function FlashcardView({ cards, onMaster }: FlashcardViewProps) {
       </div>
 
       <div 
-        className="min-h-[200px] bg-white/5 border border-white/10 rounded-2xl p-8 flex items-center justify-center cursor-pointer mb-6"
+        className="min-h-[200px] bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-8 flex items-center justify-center cursor-pointer mb-6 overflow-hidden"
         onClick={() => setFlipped(!flipped)}
       >
-        <p className="text-xl text-white text-center break-words max-w-full">{flipped ? card.back : card.front}</p>
+        <p className="text-base sm:text-xl text-white text-center break-words overflow-wrap-anywhere max-w-full">{flipped ? card.back : card.front}</p>
       </div>
 
       {flipped && (

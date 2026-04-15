@@ -56,8 +56,8 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="mb-4 flex justify-between items-center">
-        <div className="text-gray-400 text-sm">
+      <div className="mb-4 flex justify-between items-center min-w-0">
+        <div className="text-gray-400 text-sm truncate">
           Question {current + 1} of {questions.length}
         </div>
         {timeLeft !== null && (
@@ -74,8 +74,8 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
         />
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mb-6">
-        <h3 className="text-xl text-white font-medium mb-6 break-words">{question.question}</h3>
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
+        <h3 className="text-lg sm:text-xl text-white font-medium mb-4 sm:mb-6 break-words overflow-wrap-anywhere">{question.question}</h3>
 
         <div className="space-y-3">
           {question.options.map((option, i) => {
@@ -96,7 +96,7 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
                 key={i}
                 onClick={() => !answered && handleAnswer(i)}
                 disabled={answered || showResult}
-                className={`w-full text-left border rounded-xl px-4 py-3 text-white transition-colors break-words ${bg}`}
+                className={`w-full text-left border rounded-xl px-3 sm:px-4 py-3 text-white text-sm sm:text-base transition-colors break-words overflow-wrap-anywhere ${bg}`}
               >
                 {option}
               </button>
@@ -106,7 +106,7 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
 
         {(answers[current] !== undefined || showResult) && (
           <div className="mt-4 p-3 rounded-lg bg-[#14b8a6]/10 border border-[#14b8a6]/20">
-            <p className="text-sm text-gray-300">{question.explanation}</p>
+            <p className="text-sm text-gray-300 break-words overflow-wrap-anywhere">{question.explanation}</p>
           </div>
         )}
       </div>

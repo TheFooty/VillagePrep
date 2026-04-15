@@ -218,17 +218,17 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
+      <header className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-white/5">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center flex-shrink-0">
             <span className="text-white font-bold text-sm">V</span>
           </div>
-          <span className="text-white font-semibold">VillagePrep</span>
+          <span className="text-white font-semibold hidden sm:inline">VillagePrep</span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-400 text-sm">{user.email}</span>
-          <span className="px-2 py-0.5 rounded-full bg-[#14b8a6]/20 text-[#14b8a6] text-xs">{user.role}</span>
-          <button onClick={onLogout} className="text-gray-400 hover:text-white text-sm">Sign out</button>
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <span className="text-gray-400 text-xs sm:text-sm truncate max-w-[100px] sm:max-w-none">{user.email}</span>
+          <span className="px-2 py-0.5 rounded-full bg-[#14b8a6]/20 text-[#14b8a6] text-xs flex-shrink-0">{user.role}</span>
+          <button onClick={onLogout} className="text-gray-400 hover:text-white text-xs sm:text-sm flex-shrink-0">Sign out</button>
         </div>
       </header>
 
@@ -281,8 +281,8 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         ) : tab === 'chat' ? (
           <div className="space-y-4">
             {messages.map((m, i) => (
-              <div key={i} className={`p-4 rounded-xl ${m.role === 'user' ? 'bg-[#14b8a6]/10 ml-8' : 'bg-white/5 mr-8'}`}>
-                <p className="text-white whitespace-pre-wrap break-words overflow-wrap-anywhere">{m.content}</p>
+              <div key={i} className={`p-3 sm:p-4 rounded-xl overflow-hidden ${m.role === 'user' ? 'bg-[#14b8a6]/10 ml-4 sm:ml-8' : 'bg-white/5 mr-4 sm:mr-8'}`}>
+                <p className="text-white whitespace-pre-wrap break-words overflow-wrap-anywhere text-sm sm:text-base">{m.content}</p>
               </div>
             ))}
             <div ref={chatBottom} />
@@ -292,9 +292,9 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && sendChat()}
                 placeholder="Ask anything..."
-                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-[#14b8a6] focus:outline-none"
+                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white text-sm sm:text-base placeholder-gray-500 focus:border-[#14b8a6] focus:outline-none min-w-0"
               />
-              <button onClick={sendChat} className="px-4 py-2 rounded-lg bg-[#14b8a6] text-white hover:bg-[#0d9488]">Send</button>
+              <button onClick={sendChat} className="px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-[#14b8a6] text-white hover:bg-[#0d9488] text-sm sm:text-base">Send</button>
             </div>
           </div>
         ) : tab === 'flashcards' && flashcards.length > 0 ? (
@@ -315,10 +315,10 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
             {flashcards.map((card, i) => (
               <div
                 key={i}
-                className="bg-white/5 border border-white/10 rounded-xl p-6 cursor-pointer min-h-[120px] flex items-center justify-center"
+                className="bg-white/5 border border-white/10 rounded-xl p-4 sm:p-6 cursor-pointer min-h-[100px] sm:min-h-[120px] flex items-center justify-center overflow-hidden"
                 onClick={() => setFlipped(prev => { const n = [...prev]; n[i] = !n[i]; return n; })}
               >
-                <p className="text-white text-center">
+                <p className="text-white text-center text-sm sm:text-base break-words overflow-wrap-anywhere max-w-full">
                   {flipped[i] ? card.back : card.front}
                 </p>
               </div>
@@ -341,13 +341,13 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
               </div>
             </div>
             {quiz.map((q, i) => (
-              <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-5">
-                <p className="text-white font-medium mb-3">{i + 1}. {q.question}</p>
+              <div key={i} className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-5 overflow-hidden">
+                <p className="text-white font-medium mb-2 sm:mb-3 text-sm sm:text-base break-words overflow-wrap-anywhere">{i + 1}. {q.question}</p>
                 <div className="space-y-2">
                   {q.options.map((opt, oi) => (
                     <button
                       key={oi}
-                      className={`w-full text-left border border-white/10 rounded-lg px-4 py-3 text-white text-sm transition-colors ${
+                      className={`w-full text-left border border-white/10 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-white text-xs sm:text-sm transition-colors break-words overflow-wrap-anywhere ${
                         answers[i] !== undefined
                           ? q.correct === oi
                             ? 'bg-emerald-500/30 border-emerald-500'
@@ -368,7 +368,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
                   ))}
                 </div>
                 {answers[i] !== undefined && (
-                  <p className="text-gray-500 text-sm mt-2">{q.explanation}</p>
+                  <p className="text-gray-500 text-xs sm:text-sm mt-2 break-words overflow-wrap-anywhere">{q.explanation}</p>
                 )}
               </div>
             ))}
