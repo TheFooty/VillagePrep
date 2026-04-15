@@ -6,108 +6,100 @@ interface LandingPageProps {
 
 export function LandingPage({ onGetStarted }: LandingPageProps) {
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
-      {/* HEADER - Fixed, establishes top boundary */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/95 backdrop-blur-sm border-b border-white/5 h-16">
-        <div className="max-w-[1280px] mx-auto px-6 h-full flex items-center justify-between">
+    <div className="min-h-screen bg-[#0a0a0f] w-full">
+      {/* NAV BAR - Fixed at very top */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0f]/95 border-b border-white/5 h-20">
+        <div className="h-full px-12 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
-              <span className="text-white font-bold">V</span>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
+              <span className="text-white font-bold text-xl">V</span>
             </div>
-            <span className="text-white font-semibold text-lg">VillagePrep</span>
+            <span className="text-white font-bold text-xl">VillagePrep</span>
           </div>
-          
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-gray-400 hover:text-white transition-colors text-sm">Features</a>
-            <a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors text-sm">How it Works</a>
-            <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">Pricing</a>
-          </nav>
-          
           <button
             onClick={onGetStarted}
-            className="px-5 py-2 rounded-lg bg-[#14b8a6] text-white text-sm font-medium hover:bg-[#0d9488] transition-colors"
+            className="px-6 py-3 rounded-xl bg-[#14b8a6] text-white font-semibold hover:bg-[#0d9488] transition-colors"
           >
             Get Started
           </button>
         </div>
-      </header>
+      </nav>
 
-      {/* MAIN CONTENT - 1280px container, centered */}
-      <main className="max-w-[1280px] mx-auto px-6">
+      {/* 12-COLUMN GRID WRAPPER */}
+      <div className="grid grid-cols-12 gap-6 px-12">
         
-        {/* SECTION 1: HERO - 120px top margin (safe zone), 2-column split */}
-        <section className="pt-[120px] pb-[160px]">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        {/* HERO SECTION - Starts at row 1, spans all 12 columns, 150px from top */}
+        <section className="col-span-12 pt-[150px] pb-[200px]">
+          <div className="grid grid-cols-12 gap-8">
             
-            {/* LEFT COLUMN (spans 6/12) - Headline + Subtext + CTA */}
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#14b8a6]/10 border border-[#14b8a6]/20 text-[#14b8a6] text-sm font-medium">
+            {/* LEFT SIDE - Columns 1-6: Text content */}
+            <div className="col-span-6 flex flex-col justify-start space-y-8">
+              {/* Tag */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#14b8a6]/10 border border-[#14b8a6]/20 text-[#14b8a6] text-sm font-medium w-fit">
                 <span className="w-2 h-2 rounded-full bg-[#14b8a6] animate-pulse" />
                 AI-Powered Study Platform
               </div>
               
-              <h1 className="text-5xl lg:text-6xl font-bold text-white leading-[1.1] tracking-tight">
-                Study Smarter,{' '}
+              {/* Headline - Large, visible, not cropped */}
+              <h1 className="text-6xl lg:text-7xl font-bold text-white leading-[1.05] tracking-tight">
+                Study<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#14b8a6] to-[#0d9488]">
-                  Not Harder
+                  Smarter
                 </span>
               </h1>
               
-              <p className="text-xl text-gray-400 leading-relaxed max-w-lg">
-                Upload your notes and let AI generate flashcards, quizzes, and summaries instantly. Save hours of prep time and ace your exams.
+              {/* Subtext */}
+              <p className="text-2xl text-gray-400 leading-relaxed max-w-xl">
+                Upload your notes. AI generates flashcards, quizzes, and summaries instantly.
               </p>
               
-              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              {/* CTAs */}
+              <div className="flex gap-4 pt-4">
                 <button
                   onClick={onGetStarted}
-                  className="px-8 py-4 rounded-xl bg-gradient-to-r from-[#14b8a6] to-[#0d9488] text-white font-semibold text-lg hover:shadow-lg hover:shadow-[#14b8a6]/30 transition-all duration-300"
+                  className="px-10 py-5 rounded-2xl bg-gradient-to-r from-[#14b8a6] to-[#0d9488] text-white font-bold text-xl hover:shadow-2xl hover:shadow-[#14b8a6]/30 hover:-translate-y-1 transition-all duration-300"
                 >
-                  Start Studying Free
+                  Start Free →
                 </button>
-                <button className="px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-semibold text-lg hover:bg-white/10 transition-all">
+                <button className="px-10 py-5 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-xl hover:bg-white/10 transition-all">
                   Watch Demo
                 </button>
               </div>
-
-              <div className="flex items-center gap-6 text-gray-500 text-sm pt-4">
-                <span className="flex items-center gap-2">✓ No credit card</span>
-                <span className="flex items-center gap-2">✓ Free forever</span>
-              </div>
             </div>
 
-            {/* RIGHT COLUMN (spans 6/12) - Biology Flashcards */}
-            <div className="hidden lg:block">
-              <div className="space-y-4">
-                {/* Flashcard Window */}
-                <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-                  <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border-b border-white/10">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <div className="w-3 h-3 rounded-full bg-green-500" />
-                    <span className="ml-3 text-gray-400 text-sm">Biology Flashcards</span>
+            {/* RIGHT SIDE - Columns 7-12: Graphics on FAR RIGHT */}
+            <div className="col-span-6 flex items-center justify-end">
+              <div className="w-full max-w-lg space-y-6">
+                {/* Flashcard Window - Large, fills the right side */}
+                <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+                  <div className="flex items-center gap-3 px-6 py-4 bg-white/5 border-b border-white/10">
+                    <div className="w-4 h-4 rounded-full bg-red-500" />
+                    <div className="w-4 h-4 rounded-full bg-yellow-500" />
+                    <div className="w-4 h-4 rounded-full bg-green-500" />
+                    <span className="ml-4 text-gray-400 font-medium">Biology Flashcards</span>
                   </div>
                   
-                  <div className="p-5 space-y-3">
-                    <div className="bg-white/5 rounded-xl p-4">
-                      <p className="text-white font-medium mb-1">What is photosynthesis?</p>
-                      <p className="text-gray-400 text-sm">The process by which plants convert sunlight into energy...</p>
+                  <div className="p-8 space-y-5">
+                    <div className="bg-white/5 rounded-2xl p-6">
+                      <p className="text-white font-semibold text-xl mb-2">What is photosynthesis?</p>
+                      <p className="text-gray-400 text-lg">The process by which plants convert sunlight into chemical energy...</p>
                     </div>
-                    <div className="bg-white/5 rounded-xl p-4">
-                      <p className="text-white font-medium mb-1">Mitochondria function?</p>
-                      <p className="text-gray-400 text-sm">Powerhouse of the cell - produces ATP.</p>
+                    <div className="bg-white/5 rounded-2xl p-6">
+                      <p className="text-white font-semibold text-xl mb-2">Mitochondria function?</p>
+                      <p className="text-gray-400 text-lg">Powerhouse of the cell - produces ATP through cellular respiration.</p>
                     </div>
                   </div>
                 </div>
                 
-                {/* Stats Row - fills the width */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gradient-to-br from-[#14b8a6] to-[#0d9488] rounded-xl px-5 py-4">
-                    <div className="text-white text-2xl font-bold">94%</div>
-                    <div className="text-white/80 text-xs">Quiz Score</div>
+                {/* Stats Row - Below window, attached */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-[#14b8a6] to-[#0d9488] rounded-2xl px-8 py-6 shadow-lg shadow-[#14b8a6]/20">
+                    <div className="text-white text-4xl font-bold">94%</div>
+                    <div className="text-white/80 text-base">Quiz Score</div>
                   </div>
-                  <div className="bg-white/10 rounded-xl px-5 py-4 border border-white/10">
-                    <div className="text-white text-2xl font-bold">🔥 5</div>
-                    <div className="text-gray-400 text-xs">Day Streak</div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-8 py-6 border border-white/10">
+                    <div className="text-white text-4xl font-bold">🔥 5</div>
+                    <div className="text-gray-400 text-base">Day Streak</div>
                   </div>
                 </div>
               </div>
@@ -115,132 +107,131 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           </div>
         </section>
 
-        {/* SECTION 2: STATS - 160px from hero, full width bar */}
-        <section className="py-[80px] border-y border-white/5">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* STATS BAR - Full width (cols 1-12), 200px space above */}
+        <section className="col-span-12 py-16 border-y border-white/5 bg-white/[0.02]">
+          <div className="grid grid-cols-4 gap-8">
             {[
               { value: '10K+', label: 'Active Students' },
               { value: '500K+', label: 'Flashcards Created' },
               { value: '1M+', label: 'Questions Answered' },
               { value: '4.9★', label: 'User Rating' },
             ].map((stat, i) => (
-              <div key={i} className="text-center lg:text-left">
-                <div className="text-4xl font-bold text-white mb-2">{stat.value}</div>
-                <div className="text-gray-500">{stat.label}</div>
+              <div key={i}>
+                <div className="text-5xl font-bold text-white mb-2">{stat.value}</div>
+                <div className="text-gray-500 text-lg">{stat.label}</div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* SECTION 3: FEATURES - 160px from stats, 4-column grid */}
-        <section id="features" className="py-[160px]">
+        {/* FEATURES - 200px space above, 4 columns spanning full width */}
+        <section className="col-span-12 pt-[200px] pb-[200px]">
           <div className="mb-16">
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">
+            <h2 className="text-5xl lg:text-6xl font-bold text-white mb-6">
               Everything You Need
             </h2>
-            <p className="text-xl text-gray-400 max-w-2xl">
+            <p className="text-2xl text-gray-400 max-w-3xl">
               Powerful AI tools that transform how you study
             </p>
           </div>
 
-          {/* 4-COLUMN GRID - Spans full width */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* 4-COLUMN GRID - Far left to far right */}
+          <div className="grid grid-cols-4 gap-8">
             {[
               {
                 icon: '🎴',
                 title: 'Smart Flashcards',
-                desc: 'AI-generated from any material with spaced repetition.',
+                desc: 'AI-generated from any material with spaced repetition built-in.',
               },
               {
                 icon: '❓',
                 title: 'Practice Quizzes',
-                desc: 'Unlimited quizzes with instant feedback.',
+                desc: 'Unlimited quizzes with instant feedback and progress tracking.',
               },
               {
                 icon: '📝',
                 title: 'Auto Notes',
-                desc: 'Transform PDFs into clean study notes.',
+                desc: 'Transform messy PDFs into clean, organized study notes.',
               },
               {
                 icon: '💬',
                 title: 'AI Tutor',
-                desc: '24/7 AI assistant for all your questions.',
+                desc: '24/7 AI assistant for explanations and questions.',
               },
             ].map((feature, i) => (
               <div
                 key={i}
-                className="bg-white/[0.03] border border-white/10 rounded-xl p-6 hover:border-[#14b8a6]/30 transition-all"
+                className="bg-white/[0.03] border border-white/10 rounded-2xl p-8 hover:border-[#14b8a6]/30 transition-all h-full"
               >
-                <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold text-white mb-3">{feature.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{feature.desc}</p>
+                <div className="text-5xl mb-6">{feature.icon}</div>
+                <h3 className="text-2xl font-semibold text-white mb-4">{feature.title}</h3>
+                <p className="text-gray-400 text-lg leading-relaxed">{feature.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* SECTION 4: HOW IT WORKS - 160px from features, 3-column horizontal */}
-        <section id="how-it-works" className="py-[160px] bg-white/[0.02] -mx-6 px-6">
+        {/* HOW IT WORKS - 200px space, 3 columns full width */}
+        <section className="col-span-12 pt-[200px] pb-[200px] bg-white/[0.02] -mx-12 px-12">
           <div className="mb-16">
-            <h2 className="text-4xl lg:text-5xl font-bold text-white mb-4">How It Works</h2>
-            <p className="text-xl text-gray-400">Three simple steps to better grades</p>
+            <h2 className="text-5xl lg:text-6xl font-bold text-white mb-6">How It Works</h2>
+            <p className="text-2xl text-gray-400">Three simple steps to better grades</p>
           </div>
 
-          {/* 3 COLUMNS - Distributed across full width */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-3 gap-16">
             {[
-              { step: '01', title: 'Upload Your Content', desc: 'Drag and drop PDFs, documents, or paste your notes directly into the app.' },
-              { step: '02', title: 'AI Generates Materials', desc: 'Our AI instantly creates flashcards, quizzes, and summaries from your content.' },
-              { step: '03', title: 'Start Studying', desc: 'Learn with interactive tools, track your progress, and ace your exams.' },
+              { step: '01', title: 'Upload', desc: 'Drag and drop PDFs, documents, or paste your notes directly into the app.' },
+              { step: '02', title: 'Generate', desc: 'Our AI instantly creates flashcards, quizzes, and summaries.' },
+              { step: '03', title: 'Study', desc: 'Learn with interactive tools and track your progress.' },
             ].map((item, i) => (
               <div key={i}>
-                <div className="text-7xl font-bold text-[#14b8a6]/20 mb-4">{item.step}</div>
-                <h3 className="text-xl font-semibold text-white mb-3">{item.title}</h3>
-                <p className="text-gray-400 leading-relaxed">{item.desc}</p>
+                <div className="text-8xl font-bold text-[#14b8a6]/20 mb-6">{item.step}</div>
+                <h3 className="text-2xl font-semibold text-white mb-4">{item.title}</h3>
+                <p className="text-gray-400 text-lg leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* SECTION 5: CTA - 160px from how it works */}
-        <section className="py-[160px]">
-          <div className="bg-gradient-to-r from-[#14b8a6]/10 to-[#0d9488]/10 rounded-2xl p-10 lg:p-16">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+        {/* CTA - 200px space */}
+        <section className="col-span-12 pt-[200px] pb-[200px]">
+          <div className="bg-gradient-to-r from-[#14b8a6]/10 to-[#0d9488]/10 rounded-3xl p-16">
+            <div className="grid grid-cols-2 gap-16 items-center">
               <div>
-                <h2 className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight">
+                <h2 className="text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
                   Ready to Transform Your Study Sessions?
                 </h2>
-                <p className="text-xl text-gray-400 leading-relaxed mb-8">
-                  Join thousands of students studying smarter with AI. Get started for free today.
+                <p className="text-2xl text-gray-400 leading-relaxed">
+                  Join thousands of students studying smarter with AI
                 </p>
               </div>
-              <div className="flex flex-col items-start lg:items-end gap-4">
+              <div className="flex flex-col items-end gap-6">
                 <button
                   onClick={onGetStarted}
-                  className="px-10 py-5 rounded-xl bg-gradient-to-r from-[#14b8a6] to-[#0d9488] text-white font-bold text-xl hover:shadow-xl hover:shadow-[#14b8a6]/30 transition-all duration-300"
+                  className="px-12 py-6 rounded-2xl bg-gradient-to-r from-[#14b8a6] to-[#0d9488] text-white font-bold text-2xl hover:shadow-2xl hover:shadow-[#14b8a6]/30 hover:-translate-y-1 transition-all duration-300"
                 >
                   Get Started Free →
                 </button>
-                <span className="text-gray-500">No credit card required</span>
+                <p className="text-gray-500 text-xl">No credit card required</p>
               </div>
             </div>
           </div>
         </section>
 
-      </main>
+      </div>
 
-      {/* FOOTER */}
+      {/* FOOTER - Full width */}
       <footer className="border-t border-white/10">
-        <div className="max-w-[1280px] mx-auto px-6 py-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
-                <span className="text-white font-bold text-sm">V</span>
+        <div className="px-12 py-12">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
+                <span className="text-white font-bold">V</span>
               </div>
-              <span className="text-white font-semibold">VillagePrep</span>
+              <span className="text-white font-bold text-xl">VillagePrep</span>
             </div>
-            <p className="text-gray-500 text-sm">
-              © 2024 VillagePrep • Built for students
+            <p className="text-gray-500 text-lg">
+              © 2024 VillagePrep
             </p>
           </div>
         </div>
