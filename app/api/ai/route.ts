@@ -63,7 +63,7 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
         'X-Client-Name': 'VillagePrep'
       },
       body: JSON.stringify({
-        model: 'command',
+        model: 'command-a',
         message: prompt,
         temperature: 0.7,
         max_tokens: 2048,
