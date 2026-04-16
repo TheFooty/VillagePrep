@@ -5,30 +5,37 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get('email');
   const classId = searchParams.get('classId');
-  
+
   if (!email) {
     return NextResponse.json({ error: 'Email required' }, { status: 400 });
   }
-  
+
+  if (classId) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(classId)) {
+      return NextResponse.json({ error: 'Invalid classId format' }, { status: 400 });
+    }
+  }
+
   const supabase = getSupabase();
-  
+
   let query = supabase
     .from('quiz_results')
     .select('*')
     .eq('user_email', email)
     .order('completed_at', { ascending: false });
-  
+
   if (classId) {
     query = query.eq('class_id', classId);
   }
-  
+
   const { data, error } = await query.limit(50);
-  
+
   if (error) {
     console.error('Error fetching progress:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ progress: data || [] });
 }
 
