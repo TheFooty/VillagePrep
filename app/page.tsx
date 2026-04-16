@@ -62,20 +62,9 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [showLanding, setShowLanding] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = loadFromStorage();
-    if (stored) {
-      try {
-        const saved = stored as unknown as { villageprep_user?: string };
-        if (saved?.villageprep_user) {
-          setUser(JSON.parse(saved.villageprep_user));
-        }
-      } catch {
-        localStorage.removeItem('villageprep-user');
-      }
-    }
-
     fetch('/api/auth')
       .then(res => res.json())
       .then(data => {
@@ -83,9 +72,12 @@ export default function App() {
           const newUser = { email: data.email, role: data.role };
           setUser(newUser);
           localStorage.setItem('villageprep-user', JSON.stringify(newUser));
+        } else {
+          localStorage.removeItem('villageprep-user');
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -113,6 +105,23 @@ export default function App() {
 
   function showToast(message: string, type: string = 'info') {
     setToast({ message, type });
+  }
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#09090b',
+        color: '#10b981',
+        fontFamily: 'DM Sans, system-ui, sans-serif',
+        fontSize: '18px',
+      }}>
+        Loading...
+      </div>
+    );
   }
 
   if (showLanding && !user) {
