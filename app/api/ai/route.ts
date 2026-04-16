@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -56,13 +56,13 @@ function setCachedResponse(key: string, response: string): void {
 }
 
 async function* generateStream(prompt: string): AsyncGenerator<string> {
-  const apiKey = process.env.COHERE_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    yield '[Error: COHERE_API_KEY not configured. Please set the COHERE_API_KEY environment variable.]';
+    yield '[Error: GROQ_API_KEY not configured]';
     return;
   }
 
-  const url = 'https://api.cohere.com/v1/chat';
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
 
   try {
     const controller = new AbortController();
@@ -73,11 +73,10 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'X-Client-Name': 'VillagePrep'
       },
       body: JSON.stringify({
-        model: 'command-r7b',
-        message: prompt,
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 2048,
         stream: true,
@@ -110,13 +109,13 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
 
-      for (const line of lines) {
+for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           if (data === '[DONE]') continue;
           try {
             const json = JSON.parse(data);
-            const text = json.text || json.message?.content;
+            const text = json.choices?.[0]?.delta?.content;
             if (text) yield text;
           } catch {
             // Skip non-JSON lines
