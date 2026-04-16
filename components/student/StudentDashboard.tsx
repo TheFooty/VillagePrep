@@ -885,9 +885,52 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           .user-email {
             display: none;
           }
-          
+
           .dashboard-main {
             padding: 24px 16px;
+          }
+
+          .tab-nav {
+            padding: 12px 16px;
+            gap: 4px;
+          }
+
+          .tab-btn {
+            padding: 8px 12px;
+            font-size: 13px;
+          }
+
+          .upload-bar {
+            padding: 12px 16px;
+            padding-top: 80px;
+            flex-wrap: wrap;
+          }
+
+          .header-right {
+            gap: 8px;
+          }
+
+          .logout-btn {
+            padding: 6px 10px;
+            font-size: 12px;
+          }
+
+          .toast {
+            left: 16px;
+            right: 16px;
+            bottom: 16px;
+          }
+
+          .flashcard {
+            padding: 20px;
+          }
+
+          .flashcard-text {
+            font-size: 16px;
+          }
+
+          .quiz-question {
+            font-size: 14px;
           }
         }
       `}</style>

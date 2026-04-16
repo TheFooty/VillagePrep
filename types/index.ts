@@ -12,11 +12,17 @@ export interface VPClass {
   name: string;
   content: string;
   description?: string;
-  testDate: string;
-  teacherEmail: string;
+  testDate?: string;
+  test_date?: string;
+  teacherEmail?: string;
+  teacher_email?: string;
   folderId?: string;
   shareCode?: string;
+  share_code?: string;
   isPublic?: boolean;
+  is_public?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Folder {

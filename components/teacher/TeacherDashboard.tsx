@@ -505,6 +505,22 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
     setView('analytics');
   }
 
+  function getClassName(cls: VPClass): string {
+    return cls.name;
+  }
+
+  function getClassDescription(cls: VPClass): string | undefined {
+    return cls.description;
+  }
+
+  function getClassTestDate(cls: VPClass): string | undefined {
+    return cls.testDate || cls.test_date;
+  }
+
+  function getClassShareCode(cls: VPClass): string | undefined {
+    return cls.shareCode || cls.share_code;
+  }
+
   function formatDate(dateStr: string): string {
     const date = new Date(dateStr);
     const now = new Date();
@@ -582,18 +598,18 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
                   >
                     <div style={styles.classCardHeader}>
                       <div>
-                        <h3 style={styles.className}>{cls.name}</h3>
-                        {cls.description && (
-                          <p style={styles.classDesc}>{cls.description}</p>
+                        <h3 style={styles.className}>{getClassName(cls)}</h3>
+                        {getClassDescription(cls) && (
+                          <p style={styles.classDesc}>{getClassDescription(cls)}</p>
                         )}
-                        {cls.testDate && (
-                          <p style={styles.classTest}>Test: {cls.testDate}</p>
+                        {getClassTestDate(cls) && (
+                          <p style={styles.classTest}>Test: {getClassTestDate(cls)}</p>
                         )}
                       </div>
-                      {cls.shareCode && (
+                      {getClassShareCode(cls) && (
                         <div>
                           <p style={styles.shareCodeLabel}>Code</p>
-                          <p style={styles.shareCode}>{cls.shareCode}</p>
+                          <p style={styles.shareCode}>{getClassShareCode(cls)}</p>
                         </div>
                       )}
                     </div>
@@ -611,7 +627,7 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
               <button style={styles.backBtn} onClick={() => setView('classes')}>
                 ← Back to Classes
               </button>
-              <h1 style={styles.sectionTitle}>{selectedClass?.name}</h1>
+              <h1 style={styles.sectionTitle}>{selectedClass ? getClassName(selectedClass) : ''}</h1>
             </div>
 
             <div style={styles.analyticsGrid}>
