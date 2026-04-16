@@ -180,6 +180,24 @@ export async function POST(req: NextRequest) {
       stream = false,
     } = body;
 
+    // Validate inputs
+    const validTypes = ['chat', 'notes', 'flashcards', 'quiz', 'studyplan', 'podcast', 'summary', 'custom'];
+    if (!validTypes.includes(type)) {
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+    }
+
+    if (quizDifficulty && !['easy', 'medium', 'hard'].includes(quizDifficulty)) {
+      return NextResponse.json({ error: 'Invalid quiz difficulty' }, { status: 400 });
+    }
+
+    if (flashcardCount && (typeof flashcardCount !== 'number' || flashcardCount < 1 || flashcardCount > 50)) {
+      return NextResponse.json({ error: 'Invalid flashcard count' }, { status: 400 });
+    }
+
+    if (quizLength && (typeof quizLength !== 'number' || quizLength < 1 || quizLength > 20)) {
+      return NextResponse.json({ error: 'Invalid quiz length' }, { status: 400 });
+    }
+
     const maxChars = type === 'chat' ? 16000 : 12000;
     const content = classContent?.slice(0, maxChars * 2) || '';
 

@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
@@ -25,25 +25,33 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const { email, title, folderId } = await req.json();
-  
+
   if (!email || !title) {
     return NextResponse.json({ error: 'Email and title required' }, { status: 400 });
   }
-  
+
+  if (typeof title !== 'string' || title.trim().length === 0) {
+    return NextResponse.json({ error: 'Title must be a non-empty string' }, { status: 400 });
+  }
+
+  if (title.length > 200) {
+    return NextResponse.json({ error: 'Title is too long' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
-  
+
   const id = crypto.randomUUID();
   const { data, error } = await supabase
     .from('study_sets')
-    .insert([{ id, user_email: email, title, folder_id: folderId || null }])
+    .insert([{ id, user_email: email, title: title.trim(), folder_id: folderId || null }])
     .select()
     .single();
-  
+
   if (error) {
     console.error('Error creating study set:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ studySet: data });
 }
 
