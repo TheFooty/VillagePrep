@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { Flashcard } from '@/types';
 import { getInitialProgress, calculateNextReview, Quality, FlashcardProgress } from '@/lib/spaced-repetition';
 import { useKeyboardShortcuts, KeyboardShortcutsHelp } from '@/hooks/useKeyboardShortcuts';
@@ -11,16 +11,47 @@ interface FlashcardViewProps {
   onRate?: (quality: Quality) => void;
 }
 
-export function FlashcardView({ cards, onMaster, onRate }: FlashcardViewProps) {
+export const FlashcardView = memo(function FlashcardView({ cards, onMaster, onRate }: FlashcardViewProps) {
   const [current, setCurrent] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [progress, setProgress] = useState<FlashcardProgress>(getInitialProgress());
 
-  if (cards.length === 0) return null;
+  if (cards.length === 0) {
+    return (
+      <div className="flashcard-view">
+        <div className="empty-state">
+          <div className="empty-icon">🎴</div>
+          <h3>No flashcards</h3>
+          <p>Generate flashcards from your study materials to get started.</p>
+        </div>
+        <style>{`
+          .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+          }
+          .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.4;
+          }
+          .empty-state h3 {
+            color: #fafafa;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+          }
+          .empty-state p {
+            color: #71717a;
+            font-size: 14px;
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   const card = cards[current];
 
-  function handleRate(quality: Quality) {
+  const handleRate = useCallback((quality: Quality) => {
     const newProgress = calculateNextReview(quality, progress);
     setProgress(newProgress);
     onMaster?.(current, newProgress);
@@ -32,24 +63,24 @@ export function FlashcardView({ cards, onMaster, onRate }: FlashcardViewProps) {
     } else {
       setCurrent(0);
     }
-  }
+  }, [progress, current, cards.length, onMaster, onRate]);
 
-  function handleNext() {
+  const handleNext = useCallback(() => {
     if (current < cards.length - 1) {
       setCurrent(current + 1);
       setFlipped(false);
     }
-  }
+  }, [current, cards.length]);
 
-  function handlePrev() {
+  const handlePrev = useCallback(() => {
     if (current > 0) {
       setCurrent(current - 1);
       setFlipped(false);
     }
-  }
+  }, [current]);
 
   useKeyboardShortcuts({
-    onFlip: () => setFlipped(!flipped),
+    onFlip: useCallback(() => setFlipped(f => !f), []),
     onRate: handleRate,
     onNext: handleNext,
     onPrev: handlePrev,
@@ -70,7 +101,13 @@ export function FlashcardView({ cards, onMaster, onRate }: FlashcardViewProps) {
         </div>
       </div>
 
-      <div className="flashcard" onClick={() => setFlipped(!flipped)}>
+      <div
+        className="flashcard"
+        onClick={() => setFlipped(!flipped)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === ' ' && setFlipped(!flipped)}
+      >
         <p className="flashcard-text">{flipped ? card.back : card.front}</p>
         <span className="flashcard-hint">Click to flip</span>
       </div>
@@ -203,7 +240,12 @@ export function FlashcardView({ cards, onMaster, onRate }: FlashcardViewProps) {
         .rate-btn:hover {
           transform: translateY(-2px);
         }
-        
+
+        .rate-btn:focus-visible {
+          outline: 2px solid #10b981;
+          outline-offset: 2px;
+        }
+
         .rate-btn.hard:hover {
           border-color: #ef4444;
           background: rgba(239, 68, 68, 0.1);
@@ -250,7 +292,37 @@ export function FlashcardView({ cards, onMaster, onRate }: FlashcardViewProps) {
         .control-btn:hover {
           color: #fafafa;
         }
+
+        .control-btn:focus-visible {
+          outline: 2px solid #10b981;
+          outline-offset: 2px;
+          border-radius: 4px;
+        }
+
+        @media (max-width: 640px) {
+          .flashcard-view {
+            padding: 16px;
+          }
+
+          .flashcard {
+            padding: 32px 20px;
+            min-height: 200px;
+          }
+
+          .flashcard-text {
+            font-size: 18px;
+          }
+
+          .rating-buttons {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .rate-btn {
+            max-width: none;
+          }
+        }
       `}</style>
     </div>
   );
-}
+});

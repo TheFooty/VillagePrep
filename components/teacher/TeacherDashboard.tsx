@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { User, VPClass } from '@/types';
 
 interface TeacherDashboardProps {
@@ -375,7 +375,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
+export const TeacherDashboard = memo(function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
   const [classes, setClasses] = useState<VPClass[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<VPClass | null>(null);
@@ -383,6 +383,7 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
   const [analytics, setAnalytics] = useState<ClassAnalytics | null>(null);
   const [newClass, setNewClass] = useState({ name: '', content: '', description: '' });
   const [loading, setLoading] = useState(false);
+  const [fetchingClasses, setFetchingClasses] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
   const [view, setView] = useState<'classes' | 'analytics'>('classes');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -407,9 +408,10 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
 
   useEffect(() => {
     fetchClasses();
-  }, []);
+  }, [fetchClasses]);
 
-  async function fetchClasses() {
+  const fetchClasses = useCallback(async () => {
+    setFetchingClasses(true);
     try {
       const res = await fetch(`/api/classes?email=${encodeURIComponent(user.email)}`);
       const data = await res.json();
@@ -422,10 +424,12 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
       setClasses(data.classes || []);
     } catch {
       showToast('Failed to connect to server', 'error');
+    } finally {
+      setFetchingClasses(false);
     }
-  }
+  }, [user.email, showToast]);
 
-  async function createClass() {
+  const createClass = useCallback(async () => {
     if (!newClass.name.trim()) {
       showToast('Class name is required', 'error');
       return;
@@ -458,9 +462,9 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [newClass, user.email, showToast, fetchClasses]);
 
-  async function fetchClassAnalytics(classId: string) {
+  const fetchClassAnalytics = useCallback(async (classId: string) => {
     try {
       const res = await fetch(`/api/progress?email=${encodeURIComponent(user.email)}&classId=${classId}`);
       const data = await res.json();
@@ -498,31 +502,20 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
     } catch {
       showToast('Failed to fetch analytics', 'error');
     }
-  }
+  }, [user.email, showToast]);
 
-  function handleClassSelect(cls: VPClass) {
+  const handleClassSelect = useCallback((cls: VPClass) => {
     setSelectedClass(cls);
     fetchClassAnalytics(cls.id);
     setView('analytics');
-  }
+  }, [fetchClassAnalytics]);
 
-  function getClassName(cls: VPClass): string {
-    return cls.name;
-  }
+  const getClassName = useCallback((cls: VPClass): string => cls.name, []);
+  const getClassDescription = useCallback((cls: VPClass): string | undefined => cls.description, []);
+  const getClassTestDate = useCallback((cls: VPClass): string | undefined => cls.testDate || cls.test_date, []);
+  const getClassShareCode = useCallback((cls: VPClass): string | undefined => cls.shareCode || cls.share_code, []);
 
-  function getClassDescription(cls: VPClass): string | undefined {
-    return cls.description;
-  }
-
-  function getClassTestDate(cls: VPClass): string | undefined {
-    return cls.testDate || cls.test_date;
-  }
-
-  function getClassShareCode(cls: VPClass): string | undefined {
-    return cls.shareCode || cls.share_code;
-  }
-
-  function formatDate(dateStr: string): string {
+  const formatDate = useCallback((dateStr: string): string => {
     const date = new Date(dateStr);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -532,13 +525,13 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days}d ago`;
     return date.toLocaleDateString();
-  }
+  }, []);
 
-  function getScoreBadgeStyle(score: number): React.CSSProperties {
+  const getScoreBadgeStyle = useCallback((score: number): React.CSSProperties => {
     if (score >= 80) return { backgroundColor: 'rgba(16,185,129,0.2)', color: '#6ee7b7' };
     if (score >= 60) return { backgroundColor: 'rgba(234,179,8,0.2)', color: '#facc15' };
     return { backgroundColor: 'rgba(239,68,68,0.2)', color: '#fca5a5' };
-  }
+  }, []);
 
   return (
     <div style={styles.container}>
@@ -566,24 +559,44 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
       )}
 
       <main style={styles.main}>
-        {view === 'classes' ? (
-          <>
-            <div style={styles.sectionHeader}>
-              <h1 style={styles.sectionTitle}>My Classes</h1>
-              <button style={styles.createBtn} onClick={() => setShowCreateModal(true)}>
-                Create Class
-              </button>
-            </div>
-
-            {classes.length === 0 ? (
-              <div style={styles.emptyState}>
-                <div style={styles.emptyIcon}>📚</div>
-                <p style={styles.emptyText}>No classes yet. Create your first class to get started.</p>
-                <button style={styles.createBtn} onClick={() => setShowCreateModal(true)}>
+          {view === 'classes' ? (
+            <>
+              <div style={styles.sectionHeader}>
+                <h1 style={styles.sectionTitle}>My Classes</h1>
+                <button
+                  style={styles.createBtn}
+                  onClick={() => setShowCreateModal(true)}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >
                   Create Class
                 </button>
               </div>
-            ) : (
+
+              {fetchingClasses ? (
+                <div style={styles.grid}>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} style={{ ...styles.classCard, opacity: 0.6 }}>
+                      <div style={{ height: 100, background: 'rgba(255,255,255,0.03)', borderRadius: 8, marginBottom: 12 }} />
+                      <div style={{ height: 16, background: 'rgba(255,255,255,0.05)', borderRadius: 4, width: '60%', marginBottom: 8 }} />
+                      <div style={{ height: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 4, width: '40%' }} />
+                    </div>
+                  ))}
+                </div>
+              ) : classes.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <div style={styles.emptyIcon}>📚</div>
+                  <p style={styles.emptyText}>No classes yet. Create your first class to get started.</p>
+                  <button
+                    style={styles.createBtn}
+                    onClick={() => setShowCreateModal(true)}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    Create Class
+                  </button>
+                </div>
+              ) : (
               <div style={styles.grid}>
                 {classes.map((cls) => (
                   <div
@@ -592,9 +605,11 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
                     style={styles.classCard}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.borderColor = 'rgba(16,185,129,0.3)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                      e.currentTarget.style.transform = 'translateY(0)';
                     }}
                   >
                     <div style={styles.classCardHeader}>
@@ -725,8 +740,8 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
               value={newClass.name}
               onChange={(e) => setNewClass(prev => ({ ...prev, name: e.target.value }))}
               style={styles.input}
-              onFocus={(e) => e.target.style.borderColor = '#10b981'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              onFocus={(e) => { e.target.style.borderColor = '#10b981'; e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)'; }}
+              onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
             />
             <input
               type="text"
@@ -734,25 +749,32 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
               value={newClass.description}
               onChange={(e) => setNewClass(prev => ({ ...prev, description: e.target.value }))}
               style={{ ...styles.input, marginTop: '1rem' }}
-              onFocus={(e) => e.target.style.borderColor = '#10b981'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              onFocus={(e) => { e.target.style.borderColor = '#10b981'; e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)'; }}
+              onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
             />
             <textarea
               placeholder="Class content or syllabus..."
               value={newClass.content}
               onChange={(e) => setNewClass(prev => ({ ...prev, content: e.target.value }))}
               style={{ ...styles.textarea, marginTop: '1rem' }}
-              onFocus={(e) => e.target.style.borderColor = '#10b981'}
-              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+              onFocus={(e) => { e.target.style.borderColor = '#10b981'; e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.15)'; }}
+              onBlur={(e) => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
             />
             <div style={styles.modalActions}>
-              <button style={styles.cancelBtn} onClick={() => setShowCreateModal(false)}>
+              <button
+                style={styles.cancelBtn}
+                onClick={() => setShowCreateModal(false)}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              >
                 Cancel
               </button>
               <button
                 style={styles.submitBtn}
                 onClick={createClass}
-                disabled={loading}
+                disabled={loading || !newClass.name.trim()}
+                onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
               >
                 {loading ? 'Creating...' : 'Create'}
               </button>
@@ -769,12 +791,19 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
               Are you sure you want to sign out of your account?
             </p>
             <div style={styles.modalActions}>
-              <button style={styles.cancelBtn} onClick={() => setShowLogoutConfirm(false)}>
+              <button
+                style={styles.cancelBtn}
+                onClick={() => setShowLogoutConfirm(false)}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+              >
                 Cancel
               </button>
               <button
                 style={{ ...styles.submitBtn, backgroundColor: '#ef4444' }}
                 onClick={onLogout}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#dc2626'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.transform = 'translateY(0)'; }}
               >
                 Sign out
               </button>
@@ -784,4 +813,4 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
       )}
     </div>
   );
-}
+});

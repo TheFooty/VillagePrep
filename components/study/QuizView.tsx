@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { QuizQuestion } from '@/types';
 import { useKeyboardShortcuts, KeyboardShortcutsHelp } from '@/hooks/useKeyboardShortcuts';
 
@@ -77,6 +77,7 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 150ms',
     backgroundColor: 'rgba(255,255,255,0.03)',
     cursor: 'pointer',
+    fontFamily: 'inherit',
   },
   optionCorrect: {
     backgroundColor: 'rgba(16,185,129,0.15)',
@@ -124,23 +125,44 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export function QuizView({ questions, onComplete }: QuizViewProps) {
+export const QuizView = memo(function QuizView({ questions, onComplete }: QuizViewProps) {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
+  if (questions.length === 0) {
+    return (
+      <div style={{ maxWidth: '42rem', margin: '0 auto', padding: '24px' }}>
+        <div style={{
+          textAlign: 'center',
+          padding: '60px 20px',
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '1rem',
+        }}>
+          <div style={{ fontSize: '64px', marginBottom: '20px', opacity: 0.4 }}>❓</div>
+          <h3 style={{ color: '#fafafa', fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>No questions</h3>
+          <p style={{ color: '#71717a', fontSize: '14px' }}>Generate a quiz from your study materials to get started.</p>
+        </div>
+      </div>
+    );
+  }
+
   useEffect(() => {
     if (timeLeft === null || showResult) return;
     if (timeLeft <= 0) {
-      handleComplete();
+      const final = answers;
+      const score = final.filter((a, i) => a === questions[i].correct).length;
+      setShowResult(true);
+      onComplete?.(score, questions.length, final);
       return;
     }
     const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
     return () => clearTimeout(timer);
-  }, [timeLeft, showResult]);
+  }, [timeLeft, showResult, answers, questions, onComplete]);
 
-  function handleAnswer(index: number) {
+  const handleAnswer = useCallback((index: number) => {
     const newAnswers = [...answers];
     newAnswers[current] = index;
     setAnswers(newAnswers);
@@ -149,36 +171,39 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
       if (current < questions.length - 1) {
         setCurrent(current + 1);
       } else {
-        handleComplete(newAnswers);
+        const final = newAnswers;
+        const score = final.filter((a, i) => a === questions[i].correct).length;
+        setShowResult(true);
+        onComplete?.(score, questions.length, final);
       }
     }, 500);
-  }
+  }, [answers, current, questions, onComplete]);
 
-  function handleComplete(finalAnswers?: number[]) {
+  const handleComplete = useCallback((finalAnswers?: number[]) => {
     const final = finalAnswers || answers;
     const score = final.filter((a, i) => a === questions[i].correct).length;
     setShowResult(true);
     onComplete?.(score, questions.length, final);
-  }
+  }, [answers, questions, onComplete]);
 
-  function handleNext() {
+  const handleNext = useCallback(() => {
     if (current < questions.length - 1 && answers[current] !== undefined) {
       setCurrent(current + 1);
     }
-  }
+  }, [current, questions.length, answers]);
 
-  function formatTime(seconds: number): string {
+  const formatTime = useCallback((seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
+  }, []);
 
-  function getScoreMessage(score: number, total: number): string {
+  const getScoreMessage = useCallback((score: number, total: number): string => {
     const pct = score / total;
     if (pct >= 0.8) return 'Excellent!';
     if (pct >= 0.6) return 'Good job!';
     return 'Keep practicing!';
-  }
+  }, []);
 
   if (questions.length === 0) return null;
 
@@ -244,6 +269,18 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
                 onClick={() => !answered && handleAnswer(i)}
                 disabled={answered || showResult}
                 style={optionStyle}
+                onMouseEnter={(e) => {
+                  if (!answered && !showResult) {
+                    e.currentTarget.style.borderColor = 'rgba(16,185,129,0.5)';
+                    e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.08)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!answered && !showResult) {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)';
+                  }
+                }}
               >
                 {option}
               </button>
@@ -269,6 +306,8 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
           <button
             style={styles.tryAgainButton}
             onClick={() => { setCurrent(0); setAnswers([]); setShowResult(false); }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
           >
             Try Again
           </button>
@@ -276,6 +315,14 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
       )}
 
       <KeyboardShortcutsHelp mode="quiz" />
+
+      <style>{`
+        @media (max-width: 640px) {
+          .container {
+            padding: 0 16px;
+          }
+        }
+      `}</style>
     </div>
   );
-}
+});

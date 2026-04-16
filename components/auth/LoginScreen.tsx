@@ -50,10 +50,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       setError('Please enter your email address');
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       const res = await fetch('/api/auth', {
         method: 'POST',
@@ -61,16 +61,18 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
       const data = await res.json();
-      
+
       if (!res.ok) {
         if (res.status === 429) {
           setError(data.error || 'Too many attempts. Try clearing codes below.');
+          setLoading(false);
           return;
         }
         setError(data.error || 'Failed to send code. Please try again.');
+        setLoading(false);
         return;
       }
-      
+
       setRole(data.role);
       setStep('code');
     } catch {
@@ -208,7 +210,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 autoComplete="email"
               />
               <button type="submit" className="login-btn" disabled={loading || !email.trim()}>
-                {loading ? 'Sending...' : 'Continue'}
+                {loading ? (
+                  <>
+                    <span className="btn-spinner"></span>
+                    Sending...
+                  </>
+                ) : 'Continue'}
               </button>
             </form>
           ) : (
@@ -232,7 +239,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 autoComplete="one-time-code"
               />
               <button type="submit" className="login-btn" disabled={loading || code.length < 6}>
-                {loading ? 'Verifying...' : 'Verify'}
+                {loading ? (
+                  <>
+                    <span className="btn-spinner"></span>
+                    Verifying...
+                  </>
+                ) : 'Verify'}
               </button>
               <div className="resend-container">
                 <button
@@ -352,8 +364,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         
         .login-input:focus {
           border-color: #10b981;
+          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
         }
-        
+
+        .login-input:focus-visible {
+          outline: none;
+        }
+
         .login-input:disabled {
           opacity: 0.6;
           cursor: not-allowed;
@@ -413,7 +430,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           background: #059669;
           transform: translateY(-1px);
         }
-        
+
+        .login-btn:focus-visible {
+          outline: 2px solid #10b981;
+          outline-offset: 2px;
+        }
+
         .login-btn:disabled {
           opacity: 0.5;
           cursor: not-allowed;
@@ -485,7 +507,28 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           background: rgba(239, 68, 68, 0.1);
           border-color: rgba(239, 68, 68, 0.6);
         }
-        
+
+        .clear-btn:focus-visible {
+          outline: 2px solid #ef4444;
+          outline-offset: 2px;
+        }
+
+        .btn-spinner {
+          display: inline-block;
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255,255,255,0.3);
+          border-top-color: white;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          margin-right: 8px;
+          vertical-align: middle;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
         .login-footer {
           text-align: center;
           margin-top: 24px;

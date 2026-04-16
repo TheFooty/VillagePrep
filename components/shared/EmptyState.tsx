@@ -35,10 +35,10 @@ export function EmptyState({ type, onAction, actionLabel }: EmptyStateProps) {
   const { icon, title, description } = emptyMessages[type];
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="text-6xl mb-4 opacity-50">{icon}</div>
-      <h3 className="text-lg font-medium text-white mb-2">{title}</h3>
-      <p className="text-gray-400 max-w-sm mb-6">{description}</p>
+    <div className="flex flex-col items-center justify-center py-16 text-center px-4">
+      <div className="text-6xl mb-4 opacity-40">{icon}</div>
+      <h3 className="text-lg font-semibold text-zinc-50 mb-2">{title}</h3>
+      <p className="text-zinc-400 max-w-sm mb-6">{description}</p>
       {onAction && actionLabel && (
         <Button onClick={onAction}>{actionLabel}</Button>
       )}

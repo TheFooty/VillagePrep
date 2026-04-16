@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { User, StudyTab, Message, Flashcard, QuizQuestion } from '@/types';
 
 const tabLabels: Record<StudyTab, string> = {
@@ -18,7 +18,7 @@ interface StudentDashboardProps {
   onLogout: () => void;
 }
 
-export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
+export const StudentDashboard = memo(function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
   const [tab, setTab] = useState<StudyTab>('notes');
   const [myDocs, setMyDocs] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -83,7 +83,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
     toastTimeoutRef.current = setTimeout(() => setToast(null), 4000);
   }, []);
 
-  async function callAi(type: StudyTab, extraMessages?: Message[]): Promise<string | null> {
+  const callAi = useCallback(async (type: StudyTab, extraMessages?: Message[]): Promise<string | null> => {
     setAiLoading(true);
     try {
       const res = await fetch('/api/ai', {
@@ -111,9 +111,9 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
     } finally {
       setAiLoading(false);
     }
-  }
+  }, [messages, myDocs, flashcardCount, quizDifficulty, showToast]);
 
-  async function loadContent(type: StudyTab) {
+  const loadContent = useCallback(async (type: StudyTab) => {
     setTab(type);
     if (aiLoading) return;
     
@@ -124,7 +124,6 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
 
       if (type === 'notes') {
         setNotes(text);
-        // Save notes to cloud
         if (user.userId) {
           try {
             await fetch('/api/user-data', {
@@ -137,7 +136,6 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
               }),
             });
           } catch {
-            // Silent fail for notes saving
           }
         }
       } else if (type === 'flashcards') {
@@ -170,9 +168,9 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
     } finally {
       setAiLoading(false);
     }
-  }
+  }, [aiLoading, callAi, user.userId, showToast]);
 
-  async function sendChat() {
+  const sendChat = useCallback(async () => {
     if (!input.trim()) return;
     const newMessages: Message[] = [...messages, { role: 'user', content: input }];
     setMessages(newMessages);
@@ -180,9 +178,9 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
     
     const reply = await callAi('chat', newMessages);
     if (reply) setMessages([...newMessages, { role: 'assistant', content: reply }]);
-  }
+  }, [input, messages, callAi]);
 
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+  const handleFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
@@ -204,7 +202,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
     } finally {
       setAiLoading(false);
     }
-  }
+  }, [showToast]);
 
   return (
     <div className="dashboard-page">
@@ -264,14 +262,27 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         ) : tab === 'chat' ? (
           <div className="chat-container">
             <div className="chat-messages">
-              {messages.length === 0 ? (
+              {messages.length === 0 && !aiLoading ? (
                 <div className="chat-empty">
+                  <div className="empty-icon">💬</div>
                   <p>Ask me anything about your study material!</p>
+                  <span className="empty-hint">Upload materials first for better answers</span>
                 </div>
               ) : (
-                messages.map((m, i) => (
-                  <div key={i} className={`chat-msg ${m.role}`}>{m.content}</div>
-                ))
+                <>
+                  {messages.map((m, i) => (
+                    <div key={i} className={`chat-msg ${m.role}`}>{m.content}</div>
+                  ))}
+                  {aiLoading && (
+                    <div className="chat-msg assistant loading-msg">
+                      <div className="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
               <div ref={chatBottom} />
             </div>
@@ -279,10 +290,11 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendChat()}
-                placeholder="Ask anything..."
+                onKeyDown={(e) => e.key === 'Enter' && !aiLoading && sendChat()}
+                placeholder={aiLoading ? "Waiting for response..." : "Ask anything..."}
+                disabled={aiLoading}
               />
-              <button onClick={sendChat} disabled={!input.trim()}>Send</button>
+              <button onClick={sendChat} disabled={!input.trim() || aiLoading}>Send</button>
             </div>
           </div>
         ) : tab === 'flashcards' && flashcards.length > 0 ? (
@@ -365,7 +377,24 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           </div>
         ) : (
           <div className="empty-state">
-            <p>Upload materials or generate content using the tools above</p>
+            <div className="empty-icon">
+              {tab === 'notes' && '📝'}
+              {tab === 'flashcards' && '🎴'}
+              {tab === 'quiz' && '❓'}
+              {tab === 'studyplan' && '📅'}
+              {tab === 'podcast' && '🎙️'}
+              {tab === 'summary' && '📄'}
+            </div>
+            <p>No {tabLabels[tab].toLowerCase()} yet</p>
+            <span className="empty-hint">
+              {tab === 'notes' && 'Upload materials or generate notes from your content'}
+              {tab === 'flashcards' && 'Generate flashcards to test your knowledge'}
+              {tab === 'quiz' && 'Take a quiz to check your understanding'}
+              {tab === 'chat' && 'Ask questions about your study material'}
+              {tab === 'studyplan' && 'Create a personalized study schedule'}
+              {tab === 'podcast' && 'Generate an audio summary of your materials'}
+              {tab === 'summary' && 'Get a quick summary of your content'}
+            </span>
             <button onClick={() => loadContent(tab)} className="generate-btn" disabled={aiLoading}>
               Generate {tabLabels[tab]}
             </button>
@@ -510,7 +539,12 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         .upload-btn:hover {
           background: rgba(16, 185, 129, 0.25);
         }
-        
+
+        .upload-btn:focus-visible {
+          outline: 2px solid #10b981;
+          outline-offset: 2px;
+        }
+
         .hidden {
           display: none;
         }
@@ -546,7 +580,12 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           background: #18181b;
           color: #a1a1aa;
         }
-        
+
+        .tab-btn:focus-visible {
+          outline: 2px solid #10b981;
+          outline-offset: 2px;
+        }
+
         .tab-btn.active {
           background: #10b981;
           color: white;
@@ -608,10 +647,62 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         
         .chat-empty {
           text-align: center;
-          padding: 40px;
+          padding: 60px 20px;
           color: #71717a;
         }
-        
+
+        .chat-empty .empty-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+          opacity: 0.5;
+        }
+
+        .chat-empty p {
+          font-size: 16px;
+          margin-bottom: 8px;
+        }
+
+        .empty-hint {
+          display: block;
+          font-size: 13px;
+          color: #52525b;
+          max-width: 300px;
+          margin: 0 auto;
+        }
+
+        .loading-msg {
+          min-height: 60px;
+          display: flex;
+          align-items: center;
+        }
+
+        .typing-indicator {
+          display: flex;
+          gap: 4px;
+          padding: 8px 0;
+        }
+
+        .typing-indicator span {
+          width: 8px;
+          height: 8px;
+          background: #71717a;
+          border-radius: 50%;
+          animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+          animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+          30% { transform: translateY(-4px); opacity: 1; }
+        }
+
         .chat-messages {
           display: flex;
           flex-direction: column;
@@ -660,8 +751,13 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         
         .chat-input input:focus {
           border-color: #10b981;
+          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
         }
-        
+
+        .chat-input input:focus-visible {
+          outline: none;
+        }
+
         .chat-input button {
           padding: 14px 24px;
           background: #10b981;
@@ -793,7 +889,12 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         .quiz-option:hover:not(.disabled):not(:disabled) {
           border-color: #10b981;
         }
-        
+
+        .quiz-option:focus-visible {
+          outline: 2px solid #10b981;
+          outline-offset: 2px;
+        }
+
         .quiz-option.correct {
           background: rgba(16, 185, 129, 0.2);
           border-color: #10b981;
@@ -831,7 +932,13 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           text-align: center;
           padding: 80px 20px;
         }
-        
+
+        .empty-state .empty-icon {
+          font-size: 64px;
+          margin-bottom: 20px;
+          opacity: 0.4;
+        }
+
         .empty-state p {
           font-size: 15px;
           color: #71717a;
@@ -858,7 +965,12 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           opacity: 0.5;
           cursor: not-allowed;
         }
-        
+
+        .generate-btn:focus-visible {
+          outline: 2px solid #10b981;
+          outline-offset: 2px;
+        }
+
         .toast {
           position: fixed;
           bottom: 24px;
@@ -913,6 +1025,12 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           .tab-nav {
             padding: 12px 16px;
             gap: 4px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+          }
+
+          .tab-nav::-webkit-scrollbar {
+            display: none;
           }
 
           .tab-btn {
@@ -924,6 +1042,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
             padding: 12px 16px;
             padding-top: 80px;
             flex-wrap: wrap;
+            gap: 12px;
           }
 
           .header-right {
@@ -951,6 +1070,30 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
 
           .quiz-question {
             font-size: 14px;
+          }
+
+          .chat-input {
+            flex-direction: column;
+          }
+
+          .chat-input button {
+            width: 100%;
+          }
+
+          .quiz-controls {
+            flex-wrap: wrap;
+          }
+
+          .flashcard-controls {
+            flex-wrap: wrap;
+          }
+
+          .empty-state {
+            padding: 48px 16px;
+          }
+
+          .empty-state .empty-icon {
+            font-size: 48px;
           }
         }
 
@@ -1031,4 +1174,4 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
       `}</style>
     </div>
   );
-}
+});

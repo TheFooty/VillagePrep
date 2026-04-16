@@ -1,10 +1,12 @@
-﻿import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
+import { ToastProvider } from "@/contexts/ToastContext";
+import { Toast } from "@/components/ui/Toast";
 import "./globals.css";
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#14b8a6',
+  themeColor: '#10b981',
 };
 
 export const metadata: Metadata = {
@@ -54,8 +56,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <div className="noise-overlay" aria-hidden="true" />
-        {children}
+        <ToastProvider>
+          <div className="noise-overlay" aria-hidden="true" />
+          {children}
+          <Toast />
+        </ToastProvider>
       </body>
     </html>
   );

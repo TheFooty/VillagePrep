@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { User } from '@/types';
@@ -69,14 +69,47 @@ export default function App() {
       <div style={{
         minHeight: '100vh',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         background: '#09090b',
-        color: '#10b981',
-        fontFamily: 'DM Sans, system-ui, sans-serif',
-        fontSize: '18px',
+        gap: '16px',
       }}>
-        Loading...
+        <div style={{
+          width: '48px',
+          height: '48px',
+          background: 'linear-gradient(135deg, #10b981, #059669)',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 700,
+          fontSize: '20px',
+          color: 'white',
+        }}>
+          V
+        </div>
+        <div style={{
+          color: '#10b981',
+          fontFamily: "'DM Sans', system-ui, sans-serif",
+          fontSize: '14px',
+          fontWeight: 500,
+        }}>
+          Loading VillagePrep...
+        </div>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          border: '3px solid #27272a',
+          borderTopColor: '#10b981',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+        }} />
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
       </div>
     );
   }

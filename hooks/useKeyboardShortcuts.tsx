@@ -99,7 +99,7 @@ export function KeyboardShortcutsHelp({ mode = 'flashcards' }: { mode?: 'flashca
       ];
 
   return (
-    <div className="fixed bottom-4 left-4 z-40 hidden md:block">
+    <div className="fixed bottom-4 left-4 z-40 hidden md:flex">
       <div className="bg-black/80 backdrop-blur-sm rounded-lg p-3 text-xs text-gray-400 border border-white/10">
         <div className="font-medium text-gray-300 mb-2">Keyboard Shortcuts</div>
         <div className="space-y-1">

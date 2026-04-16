@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { UserStats, getUnlockedAchievements, calculateLevel, getLevelProgress, getLevelTitle, XP_PER_LEVEL } from '@/lib/gamification';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { UserStats, getUnlockedAchievements, calculateLevel, getLevelProgress, getLevelTitle } from '@/lib/gamification';
 
 const STORAGE_KEY = 'villageprep_stats';
 
@@ -134,13 +134,23 @@ export function useGamification() {
 
   const checkAchievements = useCallback(() => {
     const unlocked = getUnlockedAchievements(stats);
-    unlocked.forEach((achievement) => {
-      unlockAchievement(achievement.id, achievement.xpReward);
-    });
-  }, [stats, unlockAchievement]);
+    const newAchievements = unlocked
+      .filter((a) => !stats.achievements.includes(a.id))
+      .map((a) => ({ id: a.id, xp: a.xpReward }));
+    
+    if (newAchievements.length === 0) return;
+    
+    setStats((prev) => ({
+      ...prev,
+      achievements: [...prev.achievements, ...newAchievements.map((a) => a.id)],
+    }));
+    
+    newAchievements.forEach((a) => addXP(a.xp));
+    setNewAchievements((prev) => [...prev, ...newAchievements.map((a) => a.id)]);
+  }, [stats, addXP]);
 
-  const levelProgress = getLevelProgress(stats.xp);
-  const levelTitle = getLevelTitle(stats.level);
+  const levelProgress = useMemo(() => getLevelProgress(stats.xp), [stats.xp]);
+  const levelTitle = useMemo(() => getLevelTitle(stats.level), [stats.level]);
 
   return {
     stats,

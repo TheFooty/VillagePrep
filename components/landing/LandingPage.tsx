@@ -343,7 +343,12 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           background: var(--accent-hover);
           transform: translateY(-1px);
         }
-        
+
+        .nav-cta:focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 2px;
+        }
+
         /* Hero */
         .hero {
           min-height: 100vh;
@@ -465,7 +470,12 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           transform: translateY(-2px);
           box-shadow: 0 8px 30px rgba(16, 185, 129, 0.3);
         }
-        
+
+        .btn-primary:focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 2px;
+        }
+
         .btn-secondary {
           display: inline-flex;
           align-items: center;
@@ -484,7 +494,12 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           background: var(--bg-elevated);
           border-color: var(--text-dim);
         }
-        
+
+        .btn-secondary:focus-visible {
+          outline: 2px solid var(--border);
+          outline-offset: 2px;
+        }
+
         /* Hero Visual */
         .hero-visual {
           display: flex;
