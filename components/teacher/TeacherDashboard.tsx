@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { User, VPClass } from '@/types';
@@ -412,12 +412,12 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
     try {
       const res = await fetch(`/api/classes?email=${encodeURIComponent(user.email)}`);
       const data = await res.json();
-      
+
       if (!res.ok) {
         showToast(data.error || 'Failed to fetch classes', 'error');
         return;
       }
-      
+
       setClasses(data.classes || []);
     } catch {
       showToast('Failed to connect to server', 'error');

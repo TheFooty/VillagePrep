@@ -33,8 +33,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (data.authenticated && data.email) {
         setUser({ email: data.email, role: data.role });
       }
-    } catch (err) {
-      console.error('Session check failed:', err);
+    } catch {
+      // Silent fail - user will be logged out
     } finally {
       setLoading(false);
     }
@@ -78,9 +78,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logout() {
     try {
       await fetch('/api/auth', { method: 'DELETE' });
+    } catch {
+      // Silent fail - logout locally regardless
+    } finally {
       setUser(null);
-    } catch (err) {
-      console.error('Logout failed:', err);
     }
   }
 

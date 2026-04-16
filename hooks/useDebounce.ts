@@ -1,4 +1,4 @@
-﻿import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 
 export function useDebounce<T extends (...args: any[]) => any>(
   callback: T,
@@ -44,8 +44,8 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     if (typeof window === 'undefined') return;
     try {
       window.localStorage.setItem(key, JSON.stringify(value));
-    } catch (err) {
-      console.error('LocalStorage save failed:', err);
+    } catch {
+      // Silently fail - localStorage might be full or disabled
     }
   }, [key]);
 

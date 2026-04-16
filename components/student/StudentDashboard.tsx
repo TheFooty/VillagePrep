@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { User, StudyTab, Message, Flashcard, QuizQuestion } from '@/types';
@@ -165,7 +165,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         }
       }
     } catch (err) {
-      console.error('Error:', err);
+      showToast(err instanceof Error ? err.message : 'An unexpected error occurred', 'error');
     } finally {
       setAiLoading(false);
     }

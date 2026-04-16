@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { User } from '@/types';
@@ -88,10 +88,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       setError('Please enter the 6-digit code');
       return;
     }
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       const res = await fetch('/api/auth', {
         method: 'PUT',
@@ -99,18 +99,60 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim() }),
       });
       const data = await res.json();
-      
+
       if (!res.ok) {
         setError(data.error || 'Invalid code. Please try again.');
         return;
       }
-      
+
       onLogin({ email: data.email, role: data.role, userId: data.userId });
     } catch {
       setError('Verification failed. Please try again.');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function resendCode() {
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 429) {
+          setError(data.error || 'Too many attempts. Try clearing codes below.');
+          return;
+        }
+        setError(data.error || 'Failed to resend code. Please try again.');
+        return;
+      }
+
+      setError('');
+      showToast('Code sent! Check your email.');
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function showToast(message: string) {
+    setError(message);
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    toastTimeoutRef.current = setTimeout(() => {
+      if (!error.includes('Code sent')) {
+        setError('');
+      }
+    }, 3000);
   }
 
   return (
@@ -165,6 +207,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               <button type="submit" className="login-btn" disabled={loading || code.length < 6}>
                 {loading ? 'Verifying...' : 'Verify'}
               </button>
+              <div className="resend-container">
+                <button type="button" className="resend-btn" onClick={resendCode} disabled={loading}>
+                  Resend code
+                </button>
+              </div>
               <p className="code-role">Role: <span>{role || 'student'}</span></p>
             </form>
           )}
@@ -351,7 +398,32 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           color: #10b981;
           font-weight: 500;
         }
-        
+
+        .resend-container {
+          text-align: center;
+          margin-top: 8px;
+        }
+
+        .resend-btn {
+          background: none;
+          border: none;
+          font-size: 13px;
+          color: #10b981;
+          cursor: pointer;
+          font-family: inherit;
+          transition: color 0.2s;
+        }
+
+        .resend-btn:hover:not(:disabled) {
+          color: #059669;
+          text-decoration: underline;
+        }
+
+        .resend-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
         .login-error {
           margin-top: 16px;
           padding: 12px 16px;
