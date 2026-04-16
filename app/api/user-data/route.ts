@@ -3,40 +3,40 @@ import { supabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const email = searchParams.get('email');
+  const userId = searchParams.get('userId');
   const type = searchParams.get('type') || 'files';
-  
-  if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 });
-  
+
+  if (!userId) return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+
   const { data, error } = await supabase
     .from('user_data')
     .select('content')
-    .eq('email', email)
-    .eq('type', type)
+    .eq('user_id', userId)
+    .eq('data_type', type)
     .single();
-  
+
   if (error && error.code !== 'PGRST116') {
     console.error('Error fetching user data:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ content: data?.content || '' });
 }
 
 export async function POST(req: NextRequest) {
-  const { email, type, content } = await req.json();
-  
-  if (!email || !type) {
-    return NextResponse.json({ error: 'Email and type required' }, { status: 400 });
+  const { userId, type, content } = await req.json();
+
+  if (!userId || !type) {
+    return NextResponse.json({ error: 'User ID and type required' }, { status: 400 });
   }
-  
+
   const { data: existing } = await supabase
     .from('user_data')
     .select('id')
-    .eq('email', email)
-    .eq('type', type)
+    .eq('user_id', userId)
+    .eq('data_type', type)
     .single();
-  
+
   let error;
   if (existing) {
     ({ error } = await supabase
@@ -46,39 +46,39 @@ export async function POST(req: NextRequest) {
   } else {
     ({ error } = await supabase
       .from('user_data')
-      .insert([{ 
-        email, 
-        type, 
+      .insert([{
+        user_id: userId,
+        data_type: type,
         content: content || '',
         id: crypto.randomUUID()
       }]));
   }
-  
+
   if (error) {
     console.error('Error saving user data:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ success: true });
 }
 
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const email = searchParams.get('email');
+  const userId = searchParams.get('userId');
   const type = searchParams.get('type');
-  
-  if (!email || !type) return NextResponse.json({ error: 'Email and type required' }, { status: 400 });
-  
+
+  if (!userId || !type) return NextResponse.json({ error: 'User ID and type required' }, { status: 400 });
+
   const { error } = await supabase
     .from('user_data')
     .delete()
-    .eq('email', email)
-    .eq('type', type);
-  
+    .eq('user_id', userId)
+    .eq('data_type', type);
+
   if (error) {
     console.error('Error deleting user data:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ success: true });
 }
