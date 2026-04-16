@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
@@ -34,6 +34,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'User ID and type required' }, { status: 400 });
   }
 
+  if (typeof type !== 'string' || type.length > 50) {
+    return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
 
   const { data: existing } = await supabase
@@ -44,7 +48,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   let error;
-  
+
   if (existing) {
     ({ error } = await supabase
       .from('user_data')
