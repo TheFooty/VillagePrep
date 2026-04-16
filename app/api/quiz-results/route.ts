@@ -4,24 +4,23 @@ import { getSupabase } from '@/lib/supabase';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get('userId');
-  
+
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
-  
+
   const supabase = getSupabase();
-  
-  // Use user_email field since that's what the table uses
+
   const { data, error } = await supabase
     .from('quiz_results')
     .select('*')
     .eq('user_email', userId)
     .order('completed_at', { ascending: false })
     .limit(50);
-  
+
   if (error) {
     console.error('Error fetching quiz results:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ results: data || [] });
 }
 
