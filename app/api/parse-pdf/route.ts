@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -7,6 +7,11 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+
+    const maxSize = 25 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return NextResponse.json({ error: 'File is too large (max 25MB)' }, { status: 400 });
     }
 
     const fileName = file.name.toLowerCase();
