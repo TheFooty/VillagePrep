@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
@@ -41,46 +41,56 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const { studySetId, contentType, content } = await req.json();
-  
+
   if (!studySetId || !contentType || !content) {
     return NextResponse.json({ error: 'studySetId, contentType, and content required' }, { status: 400 });
   }
-  
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(studySetId)) {
+    return NextResponse.json({ error: 'Invalid studySetId format' }, { status: 400 });
+  }
+
+  const validContentTypes = ['flashcards', 'quiz', 'notes'];
+  if (!validContentTypes.includes(contentType)) {
+    return NextResponse.json({ error: 'Invalid contentType' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
   const id = crypto.randomUUID();
-  
+
   if (contentType === 'flashcards') {
     const { data, error } = await supabase
       .from('generated_flashcards')
       .insert([{ id, study_set_id: studySetId, content }])
       .select()
       .single();
-    
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ generated: data });
   }
-  
+
   if (contentType === 'quiz') {
     const { data, error } = await supabase
       .from('generated_quizzes')
       .insert([{ id, study_set_id: studySetId, content }])
       .select()
       .single();
-    
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ generated: data });
   }
-  
+
   if (contentType === 'notes') {
     const { data, error } = await supabase
       .from('generated_notes')
       .insert([{ id, study_set_id: studySetId, content }])
       .select()
       .single();
-    
+
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ generated: data });
   }
-  
+
   return NextResponse.json({ error: 'Invalid contentType' }, { status: 400 });
 }
