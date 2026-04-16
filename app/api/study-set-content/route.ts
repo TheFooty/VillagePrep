@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const studySetId = searchParams.get('studySetId');
   
   if (!studySetId) return NextResponse.json({ error: 'studySetId required' }, { status: 400 });
+  
+  const supabase = getSupabase();
   
   const { data: flashcards, error: fcError } = await supabase
     .from('generated_flashcards')
@@ -44,6 +46,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'studySetId, contentType, and content required' }, { status: 400 });
   }
   
+  const supabase = getSupabase();
   const id = crypto.randomUUID();
   
   if (contentType === 'flashcards') {

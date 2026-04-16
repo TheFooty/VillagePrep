@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, ReactNode, useEffect } from 'react';
 
 export interface Toast {
   message: string;
@@ -17,14 +17,37 @@ const ToastContext = createContext<ToastContextType | null>(null);
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<Toast | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const showToast = useCallback((message: string, type: Toast['type'] = 'info') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
   const hideToast = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     setToast(null);
+  }, []);
+
+  const showToast = useCallback((message: string, type: Toast['type'] = 'info') => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    setToast({ message, type });
+    
+    timeoutRef.current = setTimeout(() => {
+      setToast(null);
+      timeoutRef.current = null;
+    }, 4000);
   }, []);
 
   return (

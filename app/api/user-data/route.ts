@@ -1,13 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get('userId');
   const type = searchParams.get('type') || 'files';
 
-  if (!userId) return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+  if (!userId) {
+    return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+  }
 
+  const supabase = getSupabase();
+  
   const { data, error } = await supabase
     .from('user_data')
     .select('content')
@@ -30,6 +34,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'User ID and type required' }, { status: 400 });
   }
 
+  const supabase = getSupabase();
+
   const { data: existing } = await supabase
     .from('user_data')
     .select('id')
@@ -38,6 +44,7 @@ export async function POST(req: NextRequest) {
     .single();
 
   let error;
+  
   if (existing) {
     ({ error } = await supabase
       .from('user_data')
@@ -67,7 +74,11 @@ export async function DELETE(req: NextRequest) {
   const userId = searchParams.get('userId');
   const type = searchParams.get('type');
 
-  if (!userId || !type) return NextResponse.json({ error: 'User ID and type required' }, { status: 400 });
+  if (!userId || !type) {
+    return NextResponse.json({ error: 'User ID and type required' }, { status: 400 });
+  }
+
+  const supabase = getSupabase();
 
   const { error } = await supabase
     .from('user_data')

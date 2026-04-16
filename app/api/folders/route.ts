@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -9,10 +9,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Email required' }, { status: 400 });
   }
   
+  const supabase = getSupabase();
+  
   const { data: folders, error } = await supabase
     .from('folders')
     .select('*')
-    .eq('email', email)
+    .eq('user_email', email)
     .order('created_at', { ascending: false });
   
   if (error) {
@@ -30,14 +32,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email and folder name required' }, { status: 400 });
   }
   
+  const supabase = getSupabase();
+  
   const { data, error } = await supabase
     .from('folders')
     .insert([{ 
       id: crypto.randomUUID(),
-      email, 
+      user_email: email, 
       name, 
       color: color || '#14b8a6',
-      class_ids: classIds || []
+      parent_id: null
     }])
     .select()
     .single();
@@ -57,16 +61,17 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Email and folderId required' }, { status: 400 });
   }
   
-  const updateData: any = {};
+  const supabase = getSupabase();
+  
+  const updateData: Record<string, unknown> = {};
   if (name) updateData.name = name;
   if (color) updateData.color = color;
-  if (classIds) updateData.class_ids = classIds;
   
   const { data, error } = await supabase
     .from('folders')
     .update(updateData)
     .eq('id', folderId)
-    .eq('email', email)
+    .eq('user_email', email)
     .select()
     .single();
   
@@ -87,11 +92,13 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Email and folderId required' }, { status: 400 });
   }
   
+  const supabase = getSupabase();
+  
   const { error } = await supabase
     .from('folders')
     .delete()
     .eq('id', folderId)
-    .eq('email', email);
+    .eq('user_email', email);
   
   if (error) {
     console.error('Error deleting folder:', error);

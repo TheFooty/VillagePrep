@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { User, VPClass } from '@/types';
 
 interface TeacherDashboardProps {
@@ -385,31 +385,48 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
   const [view, setView] = useState<'classes' | 'analytics'>('classes');
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup toast timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const showToast = useCallback((message: string, type: string = 'info') => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast({ message, type });
+    toastTimeoutRef.current = setTimeout(() => setToast(null), 4000);
+  }, []);
 
   useEffect(() => {
     fetchClasses();
   }, []);
 
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
-
   async function fetchClasses() {
     try {
-      const res = await fetch('/api/classes');
+      const res = await fetch(`/api/classes?email=${encodeURIComponent(user.email)}`);
       const data = await res.json();
-      setClasses((data.classes || []).filter((c: VPClass) => c.teacherEmail === user.email));
-    } catch (err) {
-      console.error('Failed to fetch classes:', err);
+      
+      if (!res.ok) {
+        showToast(data.error || 'Failed to fetch classes', 'error');
+        return;
+      }
+      
+      setClasses(data.classes || []);
+    } catch {
+      showToast('Failed to connect to server', 'error');
     }
   }
 
   async function createClass() {
     if (!newClass.name.trim()) {
-      setToast({ message: 'Class name required', type: 'error' });
+      showToast('Class name is required', 'error');
       return;
     }
     setLoading(true);
@@ -422,21 +439,21 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
           name: newClass.name,
           content: newClass.content,
           description: newClass.description,
-          teacherEmail: user.email,
+          teacher_email: user.email,
           shareCode,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setToast({ message: data.error || 'Failed to create class', type: 'error' });
+        showToast(data.error || 'Failed to create class', 'error');
         return;
       }
-      setToast({ message: 'Class created!', type: 'success' });
+      showToast('Class created successfully!', 'success');
       setShowCreateModal(false);
       setNewClass({ name: '', content: '', description: '' });
       fetchClasses();
-    } catch (err) {
-      setToast({ message: 'Failed to create class', type: 'error' });
+    } catch {
+      showToast('Failed to create class', 'error');
     } finally {
       setLoading(false);
     }
@@ -444,7 +461,7 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
 
   async function fetchClassAnalytics(classId: string) {
     try {
-      const res = await fetch(`/api/progress?classId=${classId}`);
+      const res = await fetch(`/api/progress?email=${encodeURIComponent(user.email)}&classId=${classId}`);
       const data = await res.json();
 
       const students: StudentProgress[] = [];
@@ -460,10 +477,10 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
             activeCount++;
           }
           students.push({
-            email: p.email,
-            lastActivity: p.last_accessed,
-            avgScore: p.average_score || 0,
-            quizzesCompleted: p.times_completed || 0,
+            email: p.email || p.user_email,
+            lastActivity: p.last_accessed || p.completed_at,
+            avgScore: p.average_score || p.score || 0,
+            quizzesCompleted: p.times_completed || 1,
           });
         }
       }
@@ -477,8 +494,8 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
         topTopics: ['Chapter 1', 'Chapter 2', 'Chapter 3'].slice(0, 3),
       });
       setStudentRoster(students);
-    } catch (err) {
-      console.error('Failed to fetch analytics:', err);
+    } catch {
+      showToast('Failed to fetch analytics', 'error');
     }
   }
 

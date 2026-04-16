@@ -1,16 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const userId = searchParams.get('userId');
+  const email = searchParams.get('email');
   
-  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
+  if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 });
+  
+  const supabase = getSupabase();
   
   const { data, error } = await supabase
     .from('study_sets')
     .select('*')
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .order('created_at', { ascending: false });
   
   if (error) {
@@ -22,16 +24,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, title } = await req.json();
+  const { email, title, folderId } = await req.json();
   
-  if (!userId || !title) {
-    return NextResponse.json({ error: 'userId and title required' }, { status: 400 });
+  if (!email || !title) {
+    return NextResponse.json({ error: 'Email and title required' }, { status: 400 });
   }
+  
+  const supabase = getSupabase();
   
   const id = crypto.randomUUID();
   const { data, error } = await supabase
     .from('study_sets')
-    .insert([{ id, user_id: userId, title }])
+    .insert([{ id, user_email: email, title, folder_id: folderId || null }])
     .select()
     .single();
   
@@ -44,20 +48,24 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const { studySetId, title, userId } = await req.json();
+  const { studySetId, title, email, folderId } = await req.json();
   
-  if (!studySetId || !userId) {
-    return NextResponse.json({ error: 'studySetId and userId required' }, { status: 400 });
+  if (!studySetId || !email) {
+    return NextResponse.json({ error: 'StudySetId and email required' }, { status: 400 });
   }
   
-  const updateData: any = {};
+  const supabase = getSupabase();
+  
+  const updateData: Record<string, unknown> = {};
   if (title) updateData.title = title;
+  if (folderId !== undefined) updateData.folder_id = folderId;
+  updateData.updated_at = new Date().toISOString();
   
   const { data, error } = await supabase
     .from('study_sets')
     .update(updateData)
     .eq('id', studySetId)
-    .eq('user_id', userId)
+    .eq('user_email', email)
     .select()
     .single();
   
@@ -72,17 +80,19 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const studySetId = searchParams.get('studySetId');
-  const userId = searchParams.get('userId');
+  const email = searchParams.get('email');
   
-  if (!studySetId || !userId) {
-    return NextResponse.json({ error: 'studySetId and userId required' }, { status: 400 });
+  if (!studySetId || !email) {
+    return NextResponse.json({ error: 'StudySetId and email required' }, { status: 400 });
   }
+  
+  const supabase = getSupabase();
   
   const { error } = await supabase
     .from('study_sets')
     .delete()
     .eq('id', studySetId)
-    .eq('user_id', userId);
+    .eq('user_email', email);
   
   if (error) {
     console.error('Error deleting study set:', error);

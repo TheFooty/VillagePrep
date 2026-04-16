@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/auth';
 import crypto from 'crypto';
 
@@ -7,7 +7,7 @@ type Role = 'teacher' | 'student';
 const SESSION_SECRET = process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-production';
 const CODE_EXPIRY_MINUTES = 10;
 const MAX_ATTEMPTS_PER_CODE = 5;
-const MAX_CODES_PER_HOUR = 20;
+const MAX_CODES_PER_15_MIN = 5;
 
 function detectRole(email: string): Role {
   const schoolDomains = ['@thevillageschool.com', '@villageprep.com', '@school.edu'];
@@ -28,7 +28,8 @@ async function sendLoginCode(email: string, code: string) {
   const fromAddress = process.env.AUTH_EMAIL_FROM || 'auth@villageprep.net';
 
   if (!process.env.RESEND_API_KEY) {
-    console.log(`[dev auth] Code for ${email}: ${code}`);
+    // In development, just log the code
+    console.warn(`[DEV] Login code for ${email}: ${code}`);
     return;
   }
 
@@ -43,12 +44,12 @@ async function sendLoginCode(email: string, code: string) {
       html: `<p>Your VillagePrep login code is <strong>${code}</strong>.</p><p>This code expires in ${CODE_EXPIRY_MINUTES} minutes.</p>`
     });
   } catch (error) {
-    console.error('Resend send failed:', error);
+    console.error('Failed to send email:', error);
     throw error;
   }
 }
 
-async function storeAuthCode(supabase: any, email: string, code: string): Promise<{ success: boolean; remaining: number }> {
+async function storeAuthCode(supabase: ReturnType<typeof getSupabaseClient>, email: string, code: string): Promise<{ success: boolean; remaining: number }> {
   const hashed = hashCode(code, email);
   const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
@@ -58,7 +59,7 @@ async function storeAuthCode(supabase: any, email: string, code: string): Promis
     .delete()
     .lt('expires_at', new Date().toISOString());
 
-  // Count codes sent in last 15 minutes (not hour) - more lenient
+  // Count codes sent in last 15 minutes
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
   const { count, error } = await supabase
     .from('auth_codes')
@@ -67,14 +68,12 @@ async function storeAuthCode(supabase: any, email: string, code: string): Promis
     .gte('created_at', fifteenMinutesAgo);
 
   if (error) {
-    console.error('[storeAuthCode] count query error:', error);
+    console.error('Count query error:', error);
     throw new Error('Database error checking rate limit');
   }
 
-  console.log(`[storeAuthCode] email=${email}, count=${count}`);
-
   const recentCount = count || 0;
-  if (recentCount >= 5) { // 5 codes per 15 minutes
+  if (recentCount >= MAX_CODES_PER_15_MIN) {
     return { success: false, remaining: 0 };
   }
 
@@ -82,17 +81,15 @@ async function storeAuthCode(supabase: any, email: string, code: string): Promis
     .from('auth_codes')
     .insert([{ email, code_hash: hashed, expires_at: expiresAt, attempts: 0 }]);
 
-  console.log(`[storeAuthCode] insert result: error=${JSON.stringify(insertError)}`);
-
   if (insertError) {
-    console.error('[storeAuthCode] insert error:', insertError);
+    console.error('Insert error:', insertError);
     throw new Error('Database error storing auth code');
   }
 
-  return { success: true, remaining: 5 - recentCount - 1 };
+  return { success: true, remaining: MAX_CODES_PER_15_MIN - recentCount - 1 };
 }
 
-async function verifyCode(supabase: any, email: string, code: string): Promise<{ valid: boolean; error?: string }> {
+async function verifyCode(supabase: ReturnType<typeof getSupabaseClient>, email: string, code: string): Promise<{ valid: boolean; error?: string }> {
   const hashed = hashCode(code, email);
 
   const { data: codes, error } = await supabase
@@ -125,7 +122,7 @@ function createSessionToken(): string {
   return crypto.randomUUID();
 }
 
-async function createSession(supabase: any, userId: string, email: string): Promise<string> {
+async function createSession(supabase: ReturnType<typeof getSupabaseClient>, userId: string, email: string): Promise<string> {
   const token = createSessionToken();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -181,7 +178,7 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err) {
-    console.error('Auth POST error', err);
+    console.error('Auth POST error:', err);
     return NextResponse.json({ error: 'Failed to send login code' }, { status: 500 });
   }
 }
@@ -252,7 +249,7 @@ export async function PUT(req: NextRequest) {
 
     return response;
   } catch (err) {
-    console.error('Auth PUT error', err);
+    console.error('Auth PUT error:', err);
     return NextResponse.json({ error: 'Verification failed' }, { status: 400 });
   }
 }
@@ -288,7 +285,7 @@ export async function DELETE(req: NextRequest) {
 
     return response;
   } catch (err) {
-    console.error('Auth DELETE error', err);
+    console.error('Auth DELETE error:', err);
     return NextResponse.json({ error: 'Logout failed' }, { status: 500 });
   }
 }
@@ -321,7 +318,7 @@ export async function GET(req: NextRequest) {
       role: session.profiles?.role
     });
   } catch (err) {
-    console.error('Auth GET error', err);
+    console.error('Auth GET error:', err);
     return NextResponse.json({ authenticated: false });
   }
 }

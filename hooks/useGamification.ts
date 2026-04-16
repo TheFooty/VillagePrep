@@ -1,31 +1,12 @@
-'use client';
+﻿'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { UserStats, getUnlockedAchievements, calculateLevel, getLevelProgress, getLevelTitle, XP_PER_LEVEL } from '@/lib/gamification';
 
 const STORAGE_KEY = 'villageprep_stats';
 
 export function useGamification() {
   const [stats, setStats] = useState<UserStats>(() => {
-    if (typeof window === 'undefined') {
-      return {
-        xp: 0,
-        level: 1,
-        streak: 0,
-        longestStreak: 0,
-        lastStudyDate: null,
-        totalCardsStudied: 0,
-        totalQuizzesTaken: 0,
-        totalTimeSpent: 0,
-        achievements: [],
-      };
-    }
-    
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    
     return {
       xp: 0,
       level: 1,
@@ -40,9 +21,34 @@ export function useGamification() {
   });
 
   const [newAchievements, setNewAchievements] = useState<string[]>([]);
+  const isInitializedRef = useRef(false);
 
+  // Load from localStorage on mount
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+    if (typeof window === 'undefined' || isInitializedRef.current) return;
+    
+    isInitializedRef.current = true;
+    
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setStats(parsed);
+      }
+    } catch {
+      // Ignore parse errors
+    }
+  }, []);
+
+  // Save to localStorage when stats change
+  useEffect(() => {
+    if (!isInitializedRef.current || typeof window === 'undefined') return;
+    
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+    } catch {
+      // Ignore storage errors
+    }
   }, [stats]);
 
   const addXP = useCallback((amount: number) => {

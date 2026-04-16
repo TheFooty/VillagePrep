@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+﻿import { useState, useCallback, useRef, useEffect } from 'react';
 
 export interface AIRequest {
   type: string;
@@ -22,21 +22,36 @@ export function useAI() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (abortRef.current) {
+        abortRef.current.abort();
+        abortRef.current = null;
+      }
+    };
+  }, []);
 
   const generate = useCallback(async (request: AIRequest): Promise<AIResponse | null> => {
-    setLoading(true);
-    setError(null);
-
+    // Abort any ongoing request
     if (abortRef.current) {
       abortRef.current.abort();
     }
     abortRef.current = new AbortController();
+
+    setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
+        signal: abortRef.current.signal,
       });
 
       if (!response.ok) {
@@ -45,9 +60,18 @@ export function useAI() {
       }
 
       const data = await response.json() as AIResponse;
+      
+      if (!isMountedRef.current) {
+        return null;
+      }
+      
       setLoading(false);
       return data;
     } catch (err) {
+      if (!isMountedRef.current) {
+        return null;
+      }
+      
       const message = err instanceof Error ? err.message : 'Request failed';
       setError(message);
       setLoading(false);
@@ -58,6 +82,12 @@ export function useAI() {
   const stream = useCallback(async function* (
     request: Omit<AIRequest, 'stream'>
   ): AsyncGenerator<string> {
+    // Abort any ongoing request
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    abortRef.current = new AbortController();
+
     setLoading(true);
     setError(null);
 
@@ -66,6 +96,7 @@ export function useAI() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...request, stream: true }),
+        signal: abortRef.current.signal,
       });
 
       if (!response.ok) {
@@ -83,15 +114,17 @@ export function useAI() {
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        
+        if (done || !isMountedRef.current) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
         buffer = lines.pop() || '';
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
+            
             if (data === '[DONE]') {
               setLoading(false);
               return;
@@ -106,10 +139,15 @@ export function useAI() {
         }
       }
     } catch (err) {
+      if (!isMountedRef.current) {
+        return;
+      }
       const message = err instanceof Error ? err.message : 'Stream failed';
       setError(message);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 

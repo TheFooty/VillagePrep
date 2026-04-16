@@ -1,15 +1,20 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { getSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get('email');
-  if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 });
+  
+  if (!email) {
+    return NextResponse.json({ error: 'Email required' }, { status: 400 });
+  }
+  
+  const supabase = getSupabase();
   
   const { data, error } = await supabase
     .from('enrollments')
     .select('class_id')
-    .eq('email', email);
+    .eq('student_email', email);
   
   if (error) {
     console.error('Error fetching enrollments:', error);
@@ -22,11 +27,16 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const { email, classId } = await req.json();
-  if (!email || !classId) return NextResponse.json({ error: 'Email and classId required' }, { status: 400 });
+  
+  if (!email || !classId) {
+    return NextResponse.json({ error: 'Email and classId required' }, { status: 400 });
+  }
+  
+  const supabase = getSupabase();
   
   const { error } = await supabase
     .from('enrollments')
-    .insert([{ email, class_id: classId }]);
+    .insert([{ student_email: email, class_id: classId }]);
   
   if (error) {
     console.error('Error enrolling:', error);

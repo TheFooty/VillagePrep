@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -41,18 +41,10 @@ export default function RootLayout({
                 window.addEventListener('load', function() {
                   navigator.serviceWorker.register('/sw.js').then(
                     function(registration) {
-                      console.log('ServiceWorker registration successful');
-                      registration.addEventListener('updatefound', function() {
-                        const newWorker = registration.installing;
-                        newWorker.addEventListener('statechange', function() {
-                          if (newWorker.state === 'activated') {
-                            window.location.reload();
-                          }
-                        });
-                      });
+                      // ServiceWorker registered successfully
                     },
                     function(err) {
-                      console.log('ServiceWorker registration failed: ', err);
+                      // ServiceWorker registration failed - silent fail, not user-facing
                     }
                   );
                 });

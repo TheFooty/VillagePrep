@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -10,9 +10,10 @@ interface CacheEntry {
   timestamp: number;
 }
 
+// In-memory cache with TTL and size limits
 const responseCache = new Map<string, CacheEntry>();
-const CACHE_TTL = 24 * 60 * 60 * 1000;
-const MAX_CACHE_SIZE = 500;
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const MAX_CACHE_SIZE = 100;
 
 function getCacheKey(prompt: string): string {
   return prompt.slice(0, 150).toLowerCase().trim();
@@ -28,6 +29,17 @@ function getCachedResponse(key: string): { text: string; cached: boolean } | nul
 }
 
 function setCachedResponse(key: string, response: string): void {
+  // Clean up expired entries if cache is getting full
+  if (responseCache.size >= MAX_CACHE_SIZE) {
+    const now = Date.now();
+    for (const [k, v] of responseCache) {
+      if (now - v.timestamp > CACHE_TTL) {
+        responseCache.delete(k);
+      }
+    }
+  }
+  
+  // If still full, remove oldest entries
   if (responseCache.size >= MAX_CACHE_SIZE) {
     let oldestKey: string | null = null;
     let oldestTime = Date.now();
@@ -39,13 +51,14 @@ function setCachedResponse(key: string, response: string): void {
     }
     if (oldestKey) responseCache.delete(oldestKey);
   }
+  
   responseCache.set(key, { response, timestamp: Date.now() });
 }
 
 async function* generateStream(prompt: string): AsyncGenerator<string> {
   const apiKey = process.env.COHERE_API_KEY;
   if (!apiKey) {
-    yield '[Error: COHERE_API_KEY not configured]';
+    yield '[Error: COHERE_API_KEY not configured. Please set the COHERE_API_KEY environment variable.]';
     return;
   }
 
@@ -76,7 +89,7 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
 
     if (!res.ok) {
       const err = await res.text();
-      yield `[Error: ${res.status} - ${err.slice(0, 100)}]`;
+      yield `[Error: ${res.status} - ${err.slice(0, 200)}]`;
       return;
     }
 
@@ -112,7 +125,11 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
       }
     }
   } catch (err) {
-    yield `[Error: ${err instanceof Error ? err.message : 'Request failed'}]`;
+    if (err instanceof Error && err.name === 'AbortError') {
+      yield '[Error: Request timed out. Please try again.]';
+    } else {
+      yield `[Error: ${err instanceof Error ? err.message : 'Request failed'}]`;
+    }
   }
 }
 

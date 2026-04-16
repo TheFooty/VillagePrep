@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,14 +17,12 @@ export async function POST(req: NextRequest) {
     const videoId = videoIdMatch[1];
     
     let transcript: any[] = [];
-    let errorMsg = '';
     
     try {
       const { fetchTranscript } = await import('youtube-transcript');
       transcript = await fetchTranscript(videoId);
-    } catch (e: any) {
-      errorMsg = e.message || 'youtube-transcript failed';
-      console.log('youtube-transcript error:', errorMsg);
+    } catch {
+      // Transcript fetch failed, try fallback
     }
     
     if (!transcript || transcript.length === 0) {
@@ -55,8 +53,8 @@ export async function POST(req: NextRequest) {
             }
           }).filter(Boolean);
         }
-      } catch (e2: any) {
-        console.log('fallback also failed:', e2.message);
+      } catch {
+        // Fallback also failed
       }
     }
 
@@ -73,8 +71,9 @@ export async function POST(req: NextRequest) {
       videoId,
       hasTranscript: true
     });
-  } catch (err: any) {
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Failed to get transcript';
     console.error('YouTube transcript error:', err);
-    return NextResponse.json({ error: err.message || 'Failed to get transcript' }, { status: 500 });
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

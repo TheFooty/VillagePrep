@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { User } from '@/types';
 
 interface LoginScreenProps {
@@ -14,10 +14,26 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [role, setRole] = useState<'teacher' | 'student' | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   async function sendCode() {
+    if (!email.trim()) {
+      setError('Please enter your email address');
+      return;
+    }
+    
     setLoading(true);
     setError('');
+    
     try {
       const res = await fetch('/api/auth', {
         method: 'POST',
@@ -25,18 +41,20 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
       const data = await res.json();
+      
       if (!res.ok) {
         if (res.status === 429) {
           setError(data.error || 'Too many attempts. Try clearing codes below.');
           return;
         }
-        setError(data.error || 'Failed to send code');
+        setError(data.error || 'Failed to send code. Please try again.');
         return;
       }
+      
       setRole(data.role);
       setStep('code');
     } catch {
-      setError('Network error. Try again.');
+      setError('Network error. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -44,6 +62,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
   async function clearMyCodes() {
     if (!email) return;
+    
     setLoading(true);
     try {
       const res = await fetch(`/api/auth?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
@@ -55,18 +74,24 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         setCode('');
       } else {
         const data = await res.json();
-        setError(data.error || 'Failed to clear codes. Try again.');
+        setError(data.error || 'Failed to clear codes. Please try again.');
       }
     } catch {
-      setError('Failed to reset. Try again.');
+      setError('Failed to reset. Please try again.');
     } finally {
       setLoading(false);
     }
   }
 
   async function verifyCode() {
+    if (code.length < 6) {
+      setError('Please enter the 6-digit code');
+      return;
+    }
+    
     setLoading(true);
     setError('');
+    
     try {
       const res = await fetch('/api/auth', {
         method: 'PUT',
@@ -74,13 +99,15 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim() }),
       });
       const data = await res.json();
+      
       if (!res.ok) {
-        setError(data.error || 'Invalid code');
+        setError(data.error || 'Invalid code. Please try again.');
         return;
       }
+      
       onLogin({ email: data.email, role: data.role, userId: data.userId });
     } catch {
-      setError('Verification failed. Try again.');
+      setError('Verification failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -111,8 +138,9 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 className="login-input"
                 autoFocus
+                disabled={loading}
               />
-              <button type="submit" className="login-btn" disabled={loading || !email}>
+              <button type="submit" className="login-btn" disabled={loading || !email.trim()}>
                 {loading ? 'Sending...' : 'Continue'}
               </button>
             </form>
@@ -120,7 +148,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <form className="login-form" onSubmit={(e) => { e.preventDefault(); verifyCode(); }}>
               <div className="code-header">
                 <span className="code-sent-to">Sent to {email}</span>
-                <button type="button" className="code-change" onClick={() => setStep('email')}>
+                <button type="button" className="code-change" onClick={() => setStep('email')} disabled={loading}>
                   Change
                 </button>
               </div>
@@ -132,6 +160,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 className="login-input code-input"
                 maxLength={6}
                 autoFocus
+                disabled={loading}
               />
               <button type="submit" className="login-btn" disabled={loading || code.length < 6}>
                 {loading ? 'Verifying...' : 'Verify'}
@@ -246,6 +275,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           border-color: #10b981;
         }
         
+        .login-input:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
         .code-input {
           text-align: center;
           font-size: 24px;
@@ -273,8 +307,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           font-family: inherit;
         }
         
-        .code-change:hover {
+        .code-change:hover:not(:disabled) {
           text-decoration: underline;
+        }
+        
+        .code-change:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         
         .login-btn {

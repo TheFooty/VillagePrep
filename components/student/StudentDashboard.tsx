@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { User, StudyTab, Message, Flashcard, QuizQuestion } from '@/types';
 
 const tabLabels: Record<StudyTab, string> = {
@@ -32,18 +32,55 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
   const [flashcardCount, setFlashcardCount] = useState(10);
   const [quizDifficulty, setQuizDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const chatBottom = useRef<HTMLDivElement>(null);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup toast timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     chatBottom.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Save content to cloud when it changes
   useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(timer);
+    if (!user.userId || !myDocs) return;
+    
+    const saveTimer = setTimeout(async () => {
+      setSaveStatus('saving');
+      try {
+        await fetch('/api/user-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            userId: user.userId, 
+            type: 'class_content', 
+            content: myDocs 
+          }),
+        });
+        setSaveStatus('saved');
+      } catch {
+        setSaveStatus('error');
+      }
+    }, 2000);
+    
+    return () => clearTimeout(saveTimer);
+  }, [myDocs, user.userId]);
+
+  const showToast = useCallback((message: string, type: string = 'info') => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
     }
-  }, [toast]);
+    setToast({ message, type });
+    toastTimeoutRef.current = setTimeout(() => setToast(null), 4000);
+  }, []);
 
   async function callAi(type: StudyTab, extraMessages?: Message[]): Promise<string | null> {
     setAiLoading(true);
@@ -63,12 +100,12 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
       });
       const data = await res.json();
       if (!res.ok || data.error) {
-        setToast({ message: data.error || 'Something went wrong', type: 'error' });
+        showToast(data.error || 'Something went wrong', 'error');
         return null;
       }
       return data.text as string;
     } catch (err) {
-      setToast({ message: err instanceof Error ? err.message : 'Failed to connect', type: 'error' });
+      showToast(err instanceof Error ? err.message : 'Failed to connect', 'error');
       return null;
     } finally {
       setAiLoading(false);
@@ -84,17 +121,34 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
       const text = await callAi(type);
       if (!text) return;
 
-      if (type === 'notes') setNotes(text);
-      else if (type === 'flashcards') {
+      if (type === 'notes') {
+        setNotes(text);
+        // Save notes to cloud
+        if (user.userId) {
+          try {
+            await fetch('/api/user-data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                userId: user.userId, 
+                type: 'notes', 
+                content: text 
+              }),
+            });
+          } catch {
+            // Silent fail for notes saving
+          }
+        }
+      } else if (type === 'flashcards') {
         try {
           const clean = text.replace(/```json|```/g, '').trim();
           let cards = JSON.parse(clean) as Flashcard[];
           if (!Array.isArray(cards)) throw new Error('Not an array');
           setFlashcards(cards);
           setFlipped(new Array(cards.length).fill(false));
-          setToast({ message: `Generated ${cards.length} flashcards!`, type: 'success' });
+          showToast(`Generated ${cards.length} flashcards!`, 'success');
         } catch {
-          setToast({ message: 'Could not parse flashcards', type: 'error' });
+          showToast('Could not parse flashcards. Please try again.', 'error');
           setFlashcards([]);
         }
       } else if (type === 'quiz') {
@@ -104,9 +158,9 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           if (!Array.isArray(parsed)) throw new Error('Not an array');
           setQuiz(parsed);
           setAnswers([]);
-          setToast({ message: `Generated ${parsed.length} questions!`, type: 'success' });
+          showToast(`Generated ${parsed.length} questions!`, 'success');
         } catch {
-          setToast({ message: 'Could not parse quiz', type: 'error' });
+          showToast('Could not parse quiz. Please try again.', 'error');
           setQuiz([]);
         }
       }
@@ -131,6 +185,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     
+    setAiLoading(true);
     const formData = new FormData();
     formData.append('file', file);
     
@@ -138,13 +193,15 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
       const res = await fetch('/api/parse-pdf', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok || data.error) {
-        setToast({ message: data.error || 'Failed to parse file', type: 'error' });
+        showToast(data.error || 'Failed to parse file', 'error');
         return;
       }
       setMyDocs(data.text);
-      setToast({ message: 'File uploaded!', type: 'success' });
+      showToast(`File uploaded! ${data.truncated ? '(content truncated)' : ''}`, 'success');
     } catch {
-      setToast({ message: 'Failed to upload file', type: 'error' });
+      showToast('Failed to upload file', 'error');
+    } finally {
+      setAiLoading(false);
     }
   }
 
@@ -170,7 +227,14 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           Upload Material
           <input type="file" className="hidden" onChange={handleFile} accept=".txt,.md,.docx,.pdf,.csv" />
         </label>
-        {myDocs && <span className="upload-status">{myDocs.length.toLocaleString()} chars loaded</span>}
+        {myDocs && (
+          <span className="upload-status">
+            {myDocs.length.toLocaleString()} chars loaded
+            {saveStatus === 'saving' && ' (saving...)'}
+            {saveStatus === 'saved' && ' (saved)'}
+            {saveStatus === 'error' && ' (save failed)'}
+          </span>
+        )}
       </div>
 
       <nav className="tab-nav">
@@ -179,6 +243,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
             key={t}
             onClick={() => loadContent(t)}
             className={`tab-btn ${tab === t ? 'active' : ''}`}
+            disabled={aiLoading}
           >
             {tabLabels[t]}
           </button>
@@ -198,9 +263,15 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         ) : tab === 'chat' ? (
           <div className="chat-container">
             <div className="chat-messages">
-              {messages.map((m, i) => (
-                <div key={i} className={`chat-msg ${m.role}`}>{m.content}</div>
-              ))}
+              {messages.length === 0 ? (
+                <div className="chat-empty">
+                  <p>Ask me anything about your study material!</p>
+                </div>
+              ) : (
+                messages.map((m, i) => (
+                  <div key={i} className={`chat-msg ${m.role}`}>{m.content}</div>
+                ))
+              )}
               <div ref={chatBottom} />
             </div>
             <div className="chat-input">
@@ -210,7 +281,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
                 onKeyDown={(e) => e.key === 'Enter' && sendChat()}
                 placeholder="Ask anything..."
               />
-              <button onClick={sendChat}>Send</button>
+              <button onClick={sendChat} disabled={!input.trim()}>Send</button>
             </div>
           </div>
         ) : tab === 'flashcards' && flashcards.length > 0 ? (
@@ -221,6 +292,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
                   key={n}
                   onClick={() => { setFlashcardCount(n); loadContent('flashcards'); }}
                   className={`count-btn ${flashcardCount === n ? 'active' : ''}`}
+                  disabled={aiLoading}
                 >
                   {n} cards
                 </button>
@@ -233,7 +305,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
                 onClick={() => setFlipped(prev => { const n = [...prev]; n[i] = !n[i]; return n; })}
               >
                 <p className="flashcard-text">{flipped[i] ? card.back : card.front}</p>
-                <span className="flashcard-hint">{flipped[i] ? 'Back' : 'Front'} • Click to flip</span>
+                <span className="flashcard-hint">{flipped[i] ? 'Back' : 'Front'} - Click to flip</span>
               </div>
             ))}
           </div>
@@ -246,6 +318,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
                   key={d}
                   onClick={() => { setQuizDifficulty(d); loadContent('quiz'); }}
                   className={`count-btn ${quizDifficulty === d ? 'active' : ''}`}
+                  disabled={aiLoading}
                 >
                   {d}
                 </button>
@@ -292,7 +365,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         ) : (
           <div className="empty-state">
             <p>Upload materials or generate content using the tools above</p>
-            <button onClick={() => loadContent(tab)} className="generate-btn">
+            <button onClick={() => loadContent(tab)} className="generate-btn" disabled={aiLoading}>
               Generate {tabLabels[tab]}
             </button>
           </div>
@@ -449,7 +522,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           font-family: inherit;
         }
         
-        .tab-btn:hover {
+        .tab-btn:hover:not(:disabled) {
           background: #18181b;
           color: #a1a1aa;
         }
@@ -457,6 +530,11 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         .tab-btn.active {
           background: #10b981;
           color: white;
+        }
+        
+        .tab-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         
         .dashboard-main {
@@ -506,6 +584,12 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           display: flex;
           flex-direction: column;
           gap: 16px;
+        }
+        
+        .chat-empty {
+          text-align: center;
+          padding: 40px;
+          color: #71717a;
         }
         
         .chat-messages {
@@ -570,8 +654,13 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           font-family: inherit;
         }
         
-        .chat-input button:hover {
+        .chat-input button:hover:not(:disabled) {
           background: #059669;
+        }
+        
+        .chat-input button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         
         .flashcards {
@@ -602,6 +691,11 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           background: #10b981;
           border-color: #10b981;
           color: white;
+        }
+        
+        .count-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         
         .flashcard {
@@ -736,8 +830,13 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           font-family: inherit;
         }
         
-        .generate-btn:hover {
+        .generate-btn:hover:not(:disabled) {
           background: #059669;
+        }
+        
+        .generate-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         
         .toast {
@@ -763,6 +862,12 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           border-color: #10b981;
           background: rgba(16, 185, 129, 0.1);
           color: #6ee7b7;
+        }
+        
+        .toast.info {
+          background: rgba(139, 92, 246, 0.1);
+          border-color: #8b5cf6;
+          color: #c4b5fd;
         }
         
         @keyframes slideIn {

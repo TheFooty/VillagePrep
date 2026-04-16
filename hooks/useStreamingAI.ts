@@ -1,6 +1,6 @@
-'use client';
+﻿'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 interface UseStreamingAIProps {
   onChunk?: (chunk: string) => void;
@@ -12,13 +12,30 @@ export function useStreamingAI({ onChunk, onComplete, onError }: UseStreamingAIP
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedText, setStreamedText] = useState('');
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, []);
 
   const streamResponse = useCallback(
     async (body: object) => {
-      setIsStreaming(true);
-      setStreamedText('');
+      // Abort any ongoing stream
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       
       abortControllerRef.current = new AbortController();
+      setIsStreaming(true);
+      setStreamedText('');
       
       try {
         const response = await fetch('/api/ai', {
@@ -43,7 +60,7 @@ export function useStreamingAI({ onChunk, onComplete, onError }: UseStreamingAIP
         while (true) {
           const { done, value } = await reader.read();
           
-          if (done) break;
+          if (done || !isMountedRef.current) break;
 
           const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split('\n');
@@ -80,23 +97,35 @@ export function useStreamingAI({ onChunk, onComplete, onError }: UseStreamingAIP
           }
         }
 
-        onComplete?.(fullText);
+        if (isMountedRef.current) {
+          onComplete?.(fullText);
+        }
         return fullText;
       } catch (error) {
+        if (!isMountedRef.current) {
+          return null;
+        }
+        
         if (error instanceof Error && error.name === 'AbortError') {
           return null;
         }
         onError?.(error as Error);
         throw error;
       } finally {
-        setIsStreaming(false);
+        if (isMountedRef.current) {
+          setIsStreaming(false);
+        }
+        abortControllerRef.current = null;
       }
     },
     [onChunk, onComplete, onError]
   );
 
   const abort = useCallback(() => {
-    abortControllerRef.current?.abort();
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
     setIsStreaming(false);
   }, []);
 

@@ -1,10 +1,18 @@
-import { useRef, useCallback } from 'react';
+﻿import { useRef, useCallback, useEffect } from 'react';
 
 export function useDebounce<T extends (...args: any[]) => any>(
   callback: T,
   delay: number
 ): T {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const debouncedCallback = useCallback(
     (...args: Parameters<T>) => {
@@ -22,7 +30,7 @@ export function useDebounce<T extends (...args: any[]) => any>(
 }
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
-  const getValue = () => {
+  const getValue = useCallback(() => {
     if (typeof window === 'undefined') return initialValue;
     try {
       const item = window.localStorage.getItem(key);
@@ -30,16 +38,16 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     } catch {
       return initialValue;
     }
-  };
+  }, [key, initialValue]);
 
-  const setValue = (value: T) => {
+  const setValue = useCallback((value: T) => {
     if (typeof window === 'undefined') return;
     try {
       window.localStorage.setItem(key, JSON.stringify(value));
     } catch (err) {
       console.error('LocalStorage save failed:', err);
     }
-  };
+  }, [key]);
 
   return { getValue, setValue };
 }

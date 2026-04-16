@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,12 +15,19 @@ export async function POST(req: NextRequest) {
     let extractedText = '';
 
     if (fileName.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)) {
-      const { createWorker } = await import('tesseract.js');
-      const worker = await createWorker('eng');
-      const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type || 'image/png' });
-      const result = await worker.recognize(blob);
-      extractedText = result.data.text;
-      await worker.terminate();
+      try {
+        const { createWorker } = await import('tesseract.js');
+        const worker = await createWorker('eng');
+        const blob = new Blob([new Uint8Array(arrayBuffer)], { type: file.type || 'image/png' });
+        const result = await worker.recognize(blob);
+        extractedText = result.data.text;
+        await worker.terminate();
+      } catch (ocrError) {
+        console.error('OCR error:', ocrError);
+        return NextResponse.json({ 
+          error: 'Failed to extract text from image. Please try a clearer image or different format.' 
+        }, { status: 400 });
+      }
     }
     else if (fileName.endsWith('.pdf')) {
       try {
@@ -35,12 +42,26 @@ export async function POST(req: NextRequest) {
       }
     }
     else if (fileName.endsWith('.txt') || fileName.endsWith('.md') || fileName.endsWith('.csv')) {
-      extractedText = buffer.toString('utf-8');
+      try {
+        extractedText = buffer.toString('utf-8');
+      } catch (encodingErr) {
+        console.error('Text encoding error:', encodingErr);
+        return NextResponse.json({ 
+          error: 'Could not read text file. Ensure it is UTF-8 encoded.' 
+        }, { status: 400 });
+      }
     }
     else if (fileName.endsWith('.docx')) {
-      const mammoth = await import('mammoth');
-      const result = await mammoth.extractRawText({ buffer });
-      extractedText = result.value;
+      try {
+        const mammoth = await import('mammoth');
+        const result = await mammoth.extractRawText({ buffer });
+        extractedText = result.value;
+      } catch (docxErr) {
+        console.error('DOCX parse error:', docxErr);
+        return NextResponse.json({ 
+          error: 'Could not read DOCX file. Try converting to PDF or TXT format.' 
+        }, { status: 400 });
+      }
     }
     else {
       return NextResponse.json({ 
@@ -49,10 +70,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (!extractedText || !extractedText.trim()) {
-      return NextResponse.json({ error: 'No text could be extracted from the file.' }, { status: 400 });
+      return NextResponse.json({ error: 'No text could be extracted from the file. The file may be empty or scanned.' }, { status: 400 });
     }
 
-    return NextResponse.json({ text: extractedText.trim() });
+    // Limit content size to prevent token limit issues
+    const maxChars = 50000;
+    const trimmedText = extractedText.trim().slice(0, maxChars);
+    
+    return NextResponse.json({ 
+      text: trimmedText,
+      truncated: extractedText.length > maxChars
+    });
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unable to parse file';
     console.error('File parse error:', err);
