@@ -3,16 +3,21 @@ import { getSupabase } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const userId = searchParams.get('userId');
+  const email = searchParams.get('email');
 
-  if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
+  if (!email) return NextResponse.json({ error: 'email required' }, { status: 400 });
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+  }
 
   const supabase = getSupabase();
 
   const { data, error } = await supabase
     .from('quiz_results')
     .select('*')
-    .eq('user_email', userId)
+    .eq('user_email', email)
     .order('completed_at', { ascending: false })
     .limit(50);
 
@@ -25,10 +30,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { userId, studySetId, classId, score, total, answers } = await req.json();
+  const { email, studySetId, classId, score, total, answers } = await req.json();
 
-  if (!userId || score === undefined || !total) {
-    return NextResponse.json({ error: 'userId, score, and total required' }, { status: 400 });
+  if (!email || score === undefined || !total) {
+    return NextResponse.json({ error: 'email, score, and total required' }, { status: 400 });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
   }
 
   if (typeof score !== 'number' || score < 0 || score > 100) {
@@ -39,6 +49,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Total must be a positive number' }, { status: 400 });
   }
 
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (studySetId && !uuidRegex.test(studySetId)) {
+    return NextResponse.json({ error: 'Invalid studySetId format' }, { status: 400 });
+  }
+
+  if (classId && !uuidRegex.test(classId)) {
+    return NextResponse.json({ error: 'Invalid classId format' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
 
   const id = crypto.randomUUID();
@@ -47,11 +66,12 @@ export async function POST(req: NextRequest) {
     .from('quiz_results')
     .insert([{
       id,
-      user_email: userId,
-      study_set_id: studySetId,
-      class_id: classId,
+      user_email: email,
+      study_set_id: studySetId || null,
+      class_id: classId || null,
       score,
       total,
+      answers: answers || null,
       completed_at: new Date().toISOString()
     }])
     .select()

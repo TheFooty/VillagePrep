@@ -10,6 +10,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'User ID required' }, { status: 400 });
   }
 
+  if (typeof type !== 'string' || type.length > 50) {
+    return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
   
   const { data, error } = await supabase
@@ -36,6 +40,10 @@ export async function POST(req: NextRequest) {
 
   if (typeof type !== 'string' || type.length > 50) {
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
+  }
+
+  if (content !== undefined && typeof content !== 'string') {
+    return NextResponse.json({ error: 'Content must be a string' }, { status: 400 });
   }
 
   const supabase = getSupabase();
@@ -80,6 +88,10 @@ export async function DELETE(req: NextRequest) {
 
   if (!userId || !type) {
     return NextResponse.json({ error: 'User ID and type required' }, { status: 400 });
+  }
+
+  if (typeof type !== 'string' || type.length > 50) {
+    return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
   }
 
   const supabase = getSupabase();

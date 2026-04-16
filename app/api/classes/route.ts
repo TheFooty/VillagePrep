@@ -10,6 +10,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Email required' }, { status: 400 });
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
 
   let query = supabase
@@ -42,8 +47,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Class name is required' }, { status: 400 });
   }
 
-  if (cls.name && cls.name.length > 200) {
+  if (cls.name.length > 200) {
     return NextResponse.json({ error: 'Class name is too long' }, { status: 400 });
+  }
+
+  if (cls.description && (typeof cls.description !== 'string' || cls.description.length > 1000)) {
+    return NextResponse.json({ error: 'Description is too long' }, { status: 400 });
+  }
+
+  if (cls.teacher_email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cls.teacher_email)) {
+      return NextResponse.json({ error: 'Invalid teacher email format' }, { status: 400 });
+    }
   }
 
   const supabase = getSupabase();

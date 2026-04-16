@@ -4,9 +4,14 @@ import { getSupabase } from '@/lib/supabase';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const studySetId = searchParams.get('studySetId');
-  
+
   if (!studySetId) return NextResponse.json({ error: 'studySetId required' }, { status: 400 });
-  
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(studySetId)) {
+    return NextResponse.json({ error: 'Invalid studySetId format' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
   
   const { data: flashcards, error: fcError } = await supabase
@@ -44,6 +49,14 @@ export async function POST(req: NextRequest) {
 
   if (!studySetId || !contentType || !content) {
     return NextResponse.json({ error: 'studySetId, contentType, and content required' }, { status: 400 });
+  }
+
+  if (typeof content !== 'string') {
+    return NextResponse.json({ error: 'Content must be a string' }, { status: 400 });
+  }
+
+  if (content.length > 100000) {
+    return NextResponse.json({ error: 'Content is too large (max 100KB)' }, { status: 400 });
   }
 
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

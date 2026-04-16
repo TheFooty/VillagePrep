@@ -4,22 +4,27 @@ import { getSupabase } from '@/lib/supabase';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get('email');
-  
+
   if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 });
-  
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
-  
+
   const { data, error } = await supabase
     .from('study_sets')
     .select('*')
     .eq('user_email', email)
     .order('created_at', { ascending: false });
-  
+
   if (error) {
     console.error('Error fetching study sets:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ studySets: data || [] });
 }
 
@@ -30,12 +35,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email and title required' }, { status: 400 });
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+  }
+
   if (typeof title !== 'string' || title.trim().length === 0) {
     return NextResponse.json({ error: 'Title must be a non-empty string' }, { status: 400 });
   }
 
   if (title.length > 200) {
     return NextResponse.json({ error: 'Title is too long' }, { status: 400 });
+  }
+
+  if (folderId !== undefined && folderId !== null) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(folderId)) {
+      return NextResponse.json({ error: 'Invalid folderId format' }, { status: 400 });
+    }
   }
 
   const supabase = getSupabase();
@@ -62,6 +79,11 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'StudySetId and email required' }, { status: 400 });
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+  }
+
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!uuidRegex.test(studySetId)) {
     return NextResponse.json({ error: 'Invalid studySetId format' }, { status: 400 });
@@ -73,6 +95,12 @@ export async function PUT(req: NextRequest) {
 
   if (title && title.length > 200) {
     return NextResponse.json({ error: 'Title is too long' }, { status: 400 });
+  }
+
+  if (folderId !== undefined && folderId !== null) {
+    if (!uuidRegex.test(folderId)) {
+      return NextResponse.json({ error: 'Invalid folderId format' }, { status: 400 });
+    }
   }
 
   const supabase = getSupabase();
@@ -105,6 +133,11 @@ export async function DELETE(req: NextRequest) {
 
   if (!studySetId || !email) {
     return NextResponse.json({ error: 'StudySetId and email required' }, { status: 400 });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
   }
 
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

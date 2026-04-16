@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/auth';
 import crypto from 'crypto';
 
@@ -101,7 +101,12 @@ async function verifyCode(supabase: ReturnType<typeof getSupabaseClient>, email:
     .order('created_at', { ascending: false })
     .limit(1);
 
-  if (error || !codes || codes.length === 0) {
+  if (error) {
+    console.error('Error verifying code:', error);
+    return { valid: false, error: 'Verification failed' };
+  }
+
+  if (!codes || codes.length === 0) {
     return { valid: false, error: 'Invalid or expired code' };
   }
 
@@ -110,10 +115,14 @@ async function verifyCode(supabase: ReturnType<typeof getSupabaseClient>, email:
     return { valid: false, error: 'Too many attempts. Request a new code.' };
   }
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('auth_codes')
     .update({ attempts: authCode.attempts + 1 })
     .eq('id', authCode.id);
+
+  if (updateError) {
+    console.error('Error updating attempts:', updateError);
+  }
 
   return { valid: true };
 }
@@ -122,13 +131,18 @@ function createSessionToken(): string {
   return crypto.randomUUID();
 }
 
-async function createSession(supabase: ReturnType<typeof getSupabaseClient>, userId: string, email: string): Promise<string> {
+async function createSession(supabase: ReturnType<typeof getSupabaseClient>, userId: string, email: string): Promise<string | null> {
   const token = createSessionToken();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  await supabase
+  const { error } = await supabase
     .from('sessions')
     .insert([{ user_id: userId, session_token: token, expires_at: expiresAt }]);
+
+  if (error) {
+    console.error('Failed to create session:', error);
+    return null;
+  }
 
   return token;
 }
@@ -230,6 +244,10 @@ export async function PUT(req: NextRequest) {
     }
 
     const sessionToken = await createSession(supabase, userData?.id || email, email);
+
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
+    }
 
     const response = NextResponse.json({
       email,

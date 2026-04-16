@@ -69,20 +69,25 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const fileId = searchParams.get('fileId');
-  
+
   if (!fileId) return NextResponse.json({ error: 'fileId required' }, { status: 400 });
-  
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(fileId)) {
+    return NextResponse.json({ error: 'Invalid fileId format' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
-  
+
   const { error } = await supabase
     .from('study_set_files')
     .delete()
     .eq('id', fileId);
-  
+
   if (error) {
     console.error('Error deleting file:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ success: true });
 }

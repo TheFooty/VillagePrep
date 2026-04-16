@@ -9,6 +9,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Email required' }, { status: 400 });
   }
 
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
 
   const { data, error } = await supabase
@@ -53,6 +58,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Already enrolled in this class' }, { status: 409 });
     }
     console.error('Error enrolling:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get('email');
+  const classId = searchParams.get('classId');
+
+  if (!email || !classId) {
+    return NextResponse.json({ error: 'Email and classId required' }, { status: 400 });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+  }
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(classId)) {
+    return NextResponse.json({ error: 'Invalid classId format' }, { status: 400 });
+  }
+
+  const supabase = getSupabase();
+
+  const { error } = await supabase
+    .from('enrollments')
+    .delete()
+    .eq('student_email', email)
+    .eq('class_id', classId);
+
+  if (error) {
+    console.error('Error removing enrollment:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
