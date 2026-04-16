@@ -252,6 +252,18 @@ export async function DELETE(req: NextRequest) {
   const supabase = getSupabaseClient();
 
   try {
+    const { searchParams } = new URL(req.url);
+    const email = searchParams.get('email');
+
+    if (email) {
+      await supabase
+        .from('auth_codes')
+        .delete()
+        .eq('email', email);
+      const response = NextResponse.json({ message: 'Auth codes cleared for email' });
+      return response;
+    }
+
     const sessionToken = req.cookies.get('vpSession')?.value;
 
     if (sessionToken) {
