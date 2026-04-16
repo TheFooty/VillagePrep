@@ -33,6 +33,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
   const [quizDifficulty, setQuizDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const chatBottom = useRef<HTMLDivElement>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -215,7 +216,7 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
         <div className="header-right">
           <span className="user-email">{user.email}</span>
           <span className="user-role">{user.role}</span>
-          <button onClick={onLogout} className="logout-btn">Sign out</button>
+          <button onClick={() => setShowLogoutConfirm(true)} className="logout-btn">Sign out</button>
         </div>
       </header>
 
@@ -375,6 +376,25 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
       {toast && (
         <div className={`toast ${toast.type}`}>
           {toast.message}
+        </div>
+      )}
+
+      {showLogoutConfirm && (
+        <div className="confirm-modal" onClick={() => setShowLogoutConfirm(false)}>
+          <div className="confirm-content" onClick={e => e.stopPropagation()}>
+            <h2 className="confirm-title">Sign out?</h2>
+            <p className="confirm-text">
+              Are you sure you want to sign out of your account?
+            </p>
+            <div className="confirm-actions">
+              <button className="confirm-cancel" onClick={() => setShowLogoutConfirm(false)}>
+                Cancel
+              </button>
+              <button className="confirm-danger" onClick={onLogout}>
+                Sign out
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -932,6 +952,81 @@ export function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
           .quiz-question {
             font-size: 14px;
           }
+        }
+
+        .confirm-modal {
+          position: fixed;
+          inset: 0;
+          z-index: 100;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 1rem;
+          background-color: rgba(0,0,0,0.6);
+          backdrop-filter: blur(4px);
+        }
+
+        .confirm-content {
+          background: #18181b;
+          border: 1px solid #27272a;
+          border-radius: 16px;
+          padding: 1.5rem;
+          width: 100%;
+          max-width: 24rem;
+          text-align: center;
+        }
+
+        .confirm-title {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #fafafa;
+          margin-bottom: 0.75rem;
+        }
+
+        .confirm-text {
+          color: #a1a1aa;
+          margin-bottom: 1.5rem;
+        }
+
+        .confirm-actions {
+          display: flex;
+          gap: 0.75rem;
+        }
+
+        .confirm-cancel {
+          flex: 1;
+          padding: 0.75rem 1rem;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 10px;
+          color: #fafafa;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: inherit;
+        }
+
+        .confirm-cancel:hover {
+          background: rgba(255,255,255,0.1);
+        }
+
+        .confirm-danger {
+          flex: 1;
+          padding: 0.75rem 1rem;
+          background: #ef4444;
+          border: none;
+          border-radius: 10px;
+          color: white;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: inherit;
+        }
+
+        .confirm-danger:hover {
+          background: #dc2626;
         }
       `}</style>
     </div>

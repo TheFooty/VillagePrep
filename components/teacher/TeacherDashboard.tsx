@@ -385,6 +385,7 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
   const [view, setView] = useState<'classes' | 'analytics'>('classes');
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cleanup toast timeout on unmount
@@ -551,7 +552,7 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
         <div style={styles.headerRight}>
           <span style={styles.userEmail}>{user.email}</span>
           <span style={styles.badge}>teacher</span>
-          <button onClick={onLogout} style={styles.logoutBtn}>Sign out</button>
+          <button onClick={() => setShowLogoutConfirm(true)} style={styles.logoutBtn}>Sign out</button>
         </div>
       </header>
 
@@ -754,6 +755,28 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
                 disabled={loading}
               >
                 {loading ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLogoutConfirm && (
+        <div style={styles.modal} onClick={() => setShowLogoutConfirm(false)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>Sign out?</h2>
+            <p style={{ color: '#a1a1aa', marginBottom: '1.5rem' }}>
+              Are you sure you want to sign out of your account?
+            </p>
+            <div style={styles.modalActions}>
+              <button style={styles.cancelBtn} onClick={() => setShowLogoutConfirm(false)}>
+                Cancel
+              </button>
+              <button
+                style={{ ...styles.submitBtn, backgroundColor: '#ef4444' }}
+                onClick={onLogout}
+              >
+                Sign out
               </button>
             </div>
           </div>
