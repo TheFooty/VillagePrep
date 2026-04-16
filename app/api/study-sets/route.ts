@@ -57,18 +57,31 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   const { studySetId, title, email, folderId } = await req.json();
-  
+
   if (!studySetId || !email) {
     return NextResponse.json({ error: 'StudySetId and email required' }, { status: 400 });
   }
-  
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(studySetId)) {
+    return NextResponse.json({ error: 'Invalid studySetId format' }, { status: 400 });
+  }
+
+  if (title && (typeof title !== 'string' || title.trim().length === 0)) {
+    return NextResponse.json({ error: 'Title must be a non-empty string' }, { status: 400 });
+  }
+
+  if (title && title.length > 200) {
+    return NextResponse.json({ error: 'Title is too long' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
-  
+
   const updateData: Record<string, unknown> = {};
-  if (title) updateData.title = title;
+  if (title) updateData.title = title.trim();
   if (folderId !== undefined) updateData.folder_id = folderId;
   updateData.updated_at = new Date().toISOString();
-  
+
   const { data, error } = await supabase
     .from('study_sets')
     .update(updateData)
@@ -76,12 +89,12 @@ export async function PUT(req: NextRequest) {
     .eq('user_email', email)
     .select()
     .single();
-  
+
   if (error) {
     console.error('Error updating study set:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ studySet: data });
 }
 
@@ -89,23 +102,28 @@ export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const studySetId = searchParams.get('studySetId');
   const email = searchParams.get('email');
-  
+
   if (!studySetId || !email) {
     return NextResponse.json({ error: 'StudySetId and email required' }, { status: 400 });
   }
-  
+
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(studySetId)) {
+    return NextResponse.json({ error: 'Invalid studySetId format' }, { status: 400 });
+  }
+
   const supabase = getSupabase();
-  
+
   const { error } = await supabase
     .from('study_sets')
     .delete()
     .eq('id', studySetId)
     .eq('user_email', email);
-  
+
   if (error) {
     console.error('Error deleting study set:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ success: true });
 }
