@@ -43,13 +43,13 @@ function setCachedResponse(key: string, response: string): void {
 }
 
 async function* generateStream(prompt: string): AsyncGenerator<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    yield '[Error: GEMINI_API_KEY not configured]';
+    yield '[Error: GROQ_API_KEY not configured]';
     return;
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
 
   try {
     const controller = new AbortController();
@@ -57,13 +57,16 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
 
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 4096,
-        },
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 4096,
+        stream: true,
       }),
       signal: controller.signal,
     });
@@ -96,9 +99,10 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
+          if (data === '[DONE]') continue;
           try {
             const json = JSON.parse(data);
-            const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+            const text = json.choices?.[0]?.delta?.content;
             if (text) yield text;
           } catch {
             // Skip non-JSON lines
