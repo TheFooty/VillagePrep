@@ -66,7 +66,12 @@ async function storeAuthCode(supabase: any, email: string, code: string): Promis
     .eq('email', email)
     .gte('created_at', fifteenMinutesAgo);
 
-  console.log(`[storeAuthCode] email=${email}, count=${count}, error=${JSON.stringify(error)}`);
+  if (error) {
+    console.error('[storeAuthCode] count query error:', error);
+    throw new Error('Database error checking rate limit');
+  }
+
+  console.log(`[storeAuthCode] email=${email}, count=${count}`);
 
   const recentCount = count || 0;
   if (recentCount >= 5) { // 5 codes per 15 minutes
@@ -80,8 +85,8 @@ async function storeAuthCode(supabase: any, email: string, code: string): Promis
   console.log(`[storeAuthCode] insert result: error=${JSON.stringify(insertError)}`);
 
   if (insertError) {
-    console.error('Failed to store auth code:', insertError);
-    return { success: false, remaining: 0 };
+    console.error('[storeAuthCode] insert error:', insertError);
+    throw new Error('Database error storing auth code');
   }
 
   return { success: true, remaining: 5 - recentCount - 1 };
