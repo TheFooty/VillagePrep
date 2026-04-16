@@ -11,11 +11,11 @@ interface CacheEntry {
 }
 
 const responseCache = new Map<string, CacheEntry>();
-const CACHE_TTL = 60 * 60 * 1000;
-const MAX_CACHE_SIZE = 100;
+const CACHE_TTL = 24 * 60 * 60 * 1000;
+const MAX_CACHE_SIZE = 500;
 
 function getCacheKey(prompt: string): string {
-  return prompt.slice(0, 100);
+  return prompt.slice(0, 150).toLowerCase().trim();
 }
 
 function getCachedResponse(key: string): { text: string; cached: boolean } | null {
@@ -43,13 +43,13 @@ function setCachedResponse(key: string, response: string): void {
 }
 
 async function* generateStream(prompt: string): AsyncGenerator<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.COHERE_API_KEY;
   if (!apiKey) {
-    yield '[Error: OPENAI_API_KEY not configured]';
+    yield '[Error: COHERE_API_KEY not configured]';
     return;
   }
 
-  const url = 'https://api.openai.com/v1/chat/completions';
+  const url = 'https://api.cohere.com/v1/chat';
 
   try {
     const controller = new AbortController();
@@ -60,10 +60,11 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
+        'X-Client-Name': 'VillagePrep'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: prompt }],
+        model: 'command-r-plus',
+        message: prompt,
         temperature: 0.7,
         max_tokens: 2048,
         stream: true,
@@ -102,7 +103,7 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
           if (data === '[DONE]') continue;
           try {
             const json = JSON.parse(data);
-            const text = json.choices?.[0]?.delta?.content;
+            const text = json.text || json.message?.content;
             if (text) yield text;
           } catch {
             // Skip non-JSON lines
