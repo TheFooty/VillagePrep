@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import { Flashcard } from '@/types';
-import { Button } from '@/components/ui/Button';
 import { getInitialProgress, calculateNextReview, Quality, FlashcardProgress } from '@/lib/spaced-repetition';
 import { useKeyboardShortcuts, KeyboardShortcutsHelp } from '@/hooks/useKeyboardShortcuts';
-import { VoiceControls } from '@/components/voice/VoiceControls';
 
 interface FlashcardViewProps {
   cards: Flashcard[];
@@ -50,7 +48,6 @@ export function FlashcardView({ cards, onMaster, onRate }: FlashcardViewProps) {
     }
   }
 
-  // Keyboard shortcuts
   useKeyboardShortcuts({
     onFlip: () => setFlipped(!flipped),
     onRate: handleRate,
@@ -62,59 +59,198 @@ export function FlashcardView({ cards, onMaster, onRate }: FlashcardViewProps) {
   const mastery = progress.repetitions >= 6 ? 100 : progress.repetitions * 17;
 
   return (
-    <div className="max-w-xl mx-auto">
-      <div className="mb-4">
-        <div className="flex justify-between text-sm text-gray-400 mb-2 min-w-0">
-          <span className="truncate">{current + 1} / {cards.length}</span>
-          <span>{mastery}% mastery</span>
+    <div className="flashcard-view">
+      <div className="progress-header">
+        <div className="progress-info">
+          <span className="progress-count">{current + 1} / {cards.length}</span>
+          <span className="progress-mastery">{mastery}% mastery</span>
         </div>
-        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] transition-all duration-500"
-            style={{ width: `${mastery}%` }}
-          />
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: `${mastery}%` }} />
         </div>
       </div>
 
-      <div 
-        className="min-h-[200px] bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-8 flex items-center justify-center cursor-pointer mb-6 overflow-hidden"
-        onClick={() => setFlipped(!flipped)}
-      >
-        <p className="text-base sm:text-xl text-white text-center break-words overflow-wrap-anywhere max-w-full">{flipped ? card.back : card.front}</p>
+      <div className="flashcard" onClick={() => setFlipped(!flipped)}>
+        <p className="flashcard-text">{flipped ? card.back : card.front}</p>
+        <span className="flashcard-hint">Click to flip</span>
       </div>
-
-      {/* Voice Controls */}
-      <VoiceControls front={card.front} back={card.back} flipped={flipped} />
 
       {flipped && (
-        <div className="flex justify-center gap-3 flex-wrap">
-          <Button variant="secondary" onClick={() => handleRate(0)}>
-            <span className="hidden sm:inline">Still Learning</span>
-            <span className="sm:hidden">Hard (1)</span>
-          </Button>
-          <Button variant="secondary" onClick={() => handleRate(2)}>
-            <span className="hidden sm:inline">Know It</span>
-            <span className="sm:hidden">Good (2)</span>
-          </Button>
-          <Button onClick={() => handleRate(3)}>
-            <span className="hidden sm:inline">Easy</span>
-            <span className="sm:hidden">Easy (3)</span>
-          </Button>
+        <div className="rating-buttons">
+          <button className="rate-btn hard" onClick={() => handleRate(0)}>
+            <span className="rate-label">Still Learning</span>
+            <span className="rate-key">1</span>
+          </button>
+          <button className="rate-btn good" onClick={() => handleRate(2)}>
+            <span className="rate-label">Know It</span>
+            <span className="rate-key">2</span>
+          </button>
+          <button className="rate-btn easy" onClick={() => handleRate(3)}>
+            <span className="rate-label">Easy</span>
+            <span className="rate-key">3</span>
+          </button>
         </div>
       )}
 
-      <div className="flex justify-center gap-2 mt-4">
-        <button onClick={() => { setCurrent(0); setFlipped(false); }} className="text-gray-400 hover:text-white text-sm">
-          Restart
-        </button>
-        <span className="text-gray-500">•</span>
-        <button onClick={() => setFlipped(!flipped)} className="text-gray-400 hover:text-white text-sm">
+      <div className="card-controls">
+        <button className="control-btn" onClick={() => { setCurrent(0); setFlipped(false); }}>Restart</button>
+        <button className="control-btn" onClick={() => setFlipped(!flipped)}>
           {flipped ? 'Show Question' : 'Show Answer'}
         </button>
       </div>
 
-      {/* Keyboard Shortcuts Help */}
       <KeyboardShortcutsHelp mode="flashcards" />
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        
+        .flashcard-view {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 24px;
+          font-family: 'DM Sans', system-ui, sans-serif;
+        }
+        
+        .progress-header {
+          margin-bottom: 24px;
+        }
+        
+        .progress-info {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+          font-size: 14px;
+        }
+        
+        .progress-count {
+          color: #a1a1aa;
+        }
+        
+        .progress-mastery {
+          color: #10b981;
+          font-weight: 600;
+        }
+        
+        .progress-bar {
+          height: 6px;
+          background: #27272a;
+          border-radius: 100px;
+          overflow: hidden;
+        }
+        
+        .progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #10b981, #059669);
+          border-radius: 100px;
+          transition: width 0.5s ease;
+        }
+        
+        .flashcard {
+          background: #18181b;
+          border: 1px solid #27272a;
+          border-radius: 20px;
+          padding: 48px 32px;
+          cursor: pointer;
+          transition: all 0.3s;
+          min-height: 250px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+        }
+        
+        .flashcard:hover {
+          border-color: #10b981;
+          transform: translateY(-2px);
+        }
+        
+        .flashcard-text {
+          font-size: 22px;
+          color: #fafafa;
+          line-height: 1.5;
+          margin-bottom: 16px;
+        }
+        
+        .flashcard-hint {
+          font-size: 13px;
+          color: #71717a;
+        }
+        
+        .rating-buttons {
+          display: flex;
+          gap: 12px;
+          margin-top: 24px;
+          justify-content: center;
+        }
+        
+        .rate-btn {
+          flex: 1;
+          max-width: 140px;
+          padding: 16px;
+          background: #18181b;
+          border: 1px solid #27272a;
+          border-radius: 14px;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          font-family: inherit;
+        }
+        
+        .rate-btn:hover {
+          transform: translateY(-2px);
+        }
+        
+        .rate-btn.hard:hover {
+          border-color: #ef4444;
+          background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .rate-btn.good:hover {
+          border-color: #10b981;
+          background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .rate-btn.easy:hover {
+          border-color: #3b82f6;
+          background: rgba(59, 130, 246, 0.1);
+        }
+        
+        .rate-label {
+          font-size: 14px;
+          font-weight: 600;
+          color: #fafafa;
+        }
+        
+        .rate-key {
+          font-size: 11px;
+          color: #71717a;
+        }
+        
+        .card-controls {
+          display: flex;
+          justify-content: center;
+          gap: 24px;
+          margin-top: 24px;
+        }
+        
+        .control-btn {
+          background: none;
+          border: none;
+          color: #71717a;
+          font-size: 14px;
+          cursor: pointer;
+          font-family: inherit;
+          transition: color 0.2s;
+        }
+        
+        .control-btn:hover {
+          color: #fafafa;
+        }
+      `}</style>
     </div>
   );
 }

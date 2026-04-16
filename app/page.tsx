@@ -126,6 +126,6 @@ export default function App() {
   return user.role === 'teacher' ? (
     <TeacherDashboard user={user} onLogout={handleLogout} />
   ) : (
-    <StudentDashboard user={user} onLogout={handleLogout} toast={toast} />
+    <StudentDashboard user={user} onLogout={handleLogout} />
   );
 }

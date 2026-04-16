@@ -2,13 +2,127 @@
 
 import { useState, useEffect } from 'react';
 import { QuizQuestion } from '@/types';
-import { Button } from '@/components/ui/Button';
 import { useKeyboardShortcuts, KeyboardShortcutsHelp } from '@/hooks/useKeyboardShortcuts';
 
 interface QuizViewProps {
   questions: QuizQuestion[];
   onComplete?: (score: number, total: number, answers: number[]) => void;
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  container: {
+    maxWidth: '42rem',
+    margin: '0 auto',
+  },
+  header: {
+    marginBottom: '1rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    minWidth: 0,
+  },
+  questionCount: {
+    color: '#a1a1aa',
+    fontSize: '0.875rem',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+  },
+  timer: {
+    fontSize: '0.875rem',
+    fontFamily: 'monospace',
+  },
+  timerWarning: {
+    color: '#f87171',
+  },
+  progressBar: {
+    height: '0.375rem',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: '9999px',
+    overflow: 'hidden',
+    marginBottom: '1rem',
+  },
+  progressFill: {
+    height: '100%',
+    background: 'linear-gradient(to right, #10b981, #059669)',
+    transition: 'all 300ms',
+  },
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '1rem',
+    padding: '1.5rem',
+    marginBottom: '1.5rem',
+  },
+  question: {
+    fontSize: '1.125rem',
+    lineHeight: 1.75,
+    color: '#fafafa',
+    fontWeight: 500,
+    marginBottom: '1.5rem',
+    wordBreak: 'break-word' as const,
+  },
+  optionsGrid: {
+    display: 'grid',
+    gap: '0.75rem',
+  },
+  optionButton: {
+    width: '100%',
+    textAlign: 'left' as const,
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '0.75rem',
+    padding: '0.75rem 1rem',
+    color: '#fafafa',
+    fontSize: '0.9375rem',
+    transition: 'all 150ms',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    cursor: 'pointer',
+  },
+  optionCorrect: {
+    backgroundColor: 'rgba(16,185,129,0.15)',
+    borderColor: '#10b981',
+  },
+  optionIncorrect: {
+    backgroundColor: 'rgba(239,68,68,0.15)',
+    borderColor: '#ef4444',
+  },
+  explanation: {
+    marginTop: '1rem',
+    padding: '0.75rem',
+    borderRadius: '0.5rem',
+    backgroundColor: 'rgba(16,185,129,0.08)',
+    border: '1px solid rgba(16,185,129,0.15)',
+  },
+  explanationText: {
+    fontSize: '0.875rem',
+    color: '#d4d4d8',
+    wordBreak: 'break-word' as const,
+  },
+  resultContainer: {
+    textAlign: 'center' as const,
+  },
+  score: {
+    fontSize: '3rem',
+    fontWeight: 700,
+    color: '#fafafa',
+    marginBottom: '0.5rem',
+  },
+  scoreMessage: {
+    color: '#a1a1aa',
+    marginBottom: '1.5rem',
+  },
+  tryAgainButton: {
+    padding: '0.625rem 1.5rem',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.5rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+    transition: 'all 150ms',
+  },
+};
 
 export function QuizView({ questions, onComplete }: QuizViewProps) {
   const [current, setCurrent] = useState(0);
@@ -31,7 +145,6 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
     newAnswers[current] = index;
     setAnswers(newAnswers);
 
-    // Auto-advance after a short delay
     setTimeout(() => {
       if (current < questions.length - 1) {
         setCurrent(current + 1);
@@ -60,12 +173,18 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
 
+  function getScoreMessage(score: number, total: number): string {
+    const pct = score / total;
+    if (pct >= 0.8) return 'Excellent!';
+    if (pct >= 0.6) return 'Good job!';
+    return 'Keep practicing!';
+  }
+
   if (questions.length === 0) return null;
 
   const question = questions[current];
   const isComplete = showResult || answers.length >= questions.length;
 
-  // Keyboard shortcuts
   useKeyboardShortcuts({
     onAnswer: handleAnswer,
     onNext: handleNext,
@@ -73,41 +192,50 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
     currentOptions: question.options.length,
   });
 
+  const answered = answers[current] !== undefined;
+  const correctCount = answers.filter((a, i) => a === questions[i].correct).length;
+
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="mb-4 flex justify-between items-center min-w-0">
-        <div className="text-gray-400 text-sm truncate">
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <div style={styles.questionCount}>
           Question {current + 1} of {questions.length}
         </div>
         {timeLeft !== null && (
-          <div className={`text-sm font-mono ${timeLeft < 60 ? 'text-red-400' : 'text-gray-400'}`}>
+          <div style={{
+            ...styles.timer,
+            ...(timeLeft < 60 ? styles.timerWarning : { color: '#a1a1aa' })
+          }}>
             {formatTime(timeLeft)}
           </div>
         )}
       </div>
 
-      <div className="mb-4 h-1.5 bg-white/10 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-gradient-to-r from-[#14b8a6] to-[#0d9488] transition-all duration-300"
-          style={{ width: `${((current + 1) / questions.length) * 100}%` }}
+      <div style={styles.progressBar}>
+        <div
+          style={{
+            ...styles.progressFill,
+            width: `${((current + 1) / questions.length) * 100}%`
+          }}
         />
       </div>
 
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 mb-6">
-        <h3 className="text-lg sm:text-xl text-white font-medium mb-4 sm:mb-6 break-words overflow-wrap-anywhere">{question.question}</h3>
+      <div style={styles.card}>
+        <h3 style={styles.question}>{question.question}</h3>
 
-        <div className="space-y-3">
+        <div style={styles.optionsGrid}>
           {question.options.map((option, i) => {
-            const answered = answers[current] !== undefined;
             const isSelected = answers[current] === i;
             const isCorrect = question.correct === i;
-            
-            let bg = 'bg-white/5 border-white/10 hover:bg-white/10';
+
+            let optionStyle: React.CSSProperties = { ...styles.optionButton };
             if (showResult) {
-              if (isCorrect) bg = 'bg-emerald-500/20 border-emerald-500';
-              else if (isSelected && !isCorrect) bg = 'bg-red-500/20 border-red-500';
+              if (isCorrect) optionStyle = { ...optionStyle, ...styles.optionCorrect };
+              else if (isSelected && !isCorrect) optionStyle = { ...optionStyle, ...styles.optionIncorrect };
             } else if (answered && isSelected) {
-              bg = isCorrect ? 'bg-emerald-500/20 border-emerald-500' : 'bg-red-500/20 border-red-500';
+              optionStyle = isCorrect
+                ? { ...optionStyle, ...styles.optionCorrect }
+                : { ...optionStyle, ...styles.optionIncorrect };
             }
 
             return (
@@ -115,7 +243,7 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
                 key={i}
                 onClick={() => !answered && handleAnswer(i)}
                 disabled={answered || showResult}
-                className={`w-full text-left border rounded-xl px-3 sm:px-4 py-3 text-white text-sm sm:text-base transition-colors break-words overflow-wrap-anywhere ${bg}`}
+                style={optionStyle}
               >
                 {option}
               </button>
@@ -124,31 +252,29 @@ export function QuizView({ questions, onComplete }: QuizViewProps) {
         </div>
 
         {(answers[current] !== undefined || showResult) && (
-          <div className="mt-4 p-3 rounded-lg bg-[#14b8a6]/10 border border-[#14b8a6]/20">
-            <p className="text-sm text-gray-300 break-words overflow-wrap-anywhere">{question.explanation}</p>
+          <div style={styles.explanation}>
+            <p style={styles.explanationText}>{question.explanation}</p>
           </div>
         )}
       </div>
 
       {isComplete && (
-        <div className="text-center">
-          <div className="text-3xl font-bold text-white mb-2">
-            {answers.filter((a, i) => a === questions[i].correct).length} / {questions.length}
+        <div style={styles.resultContainer}>
+          <div style={styles.score}>
+            {correctCount} / {questions.length}
           </div>
-          <p className="text-gray-400 mb-4">
-            {answers.filter((a, i) => a === questions[i].correct).length >= questions.length * 0.8 
-              ? 'Excellent!' 
-              : answers.filter((a, i) => a === questions[i].correct).length >= questions.length * 0.6 
-              ? 'Good job!' 
-              : 'Keep practicing!'}
+          <p style={styles.scoreMessage}>
+            {getScoreMessage(correctCount, questions.length)}
           </p>
-          <Button onClick={() => { setCurrent(0); setAnswers([]); setShowResult(false); }}>
+          <button
+            style={styles.tryAgainButton}
+            onClick={() => { setCurrent(0); setAnswers([]); setShowResult(false); }}
+          >
             Try Again
-          </Button>
+          </button>
         </div>
       )}
 
-      {/* Keyboard Shortcuts Help */}
       <KeyboardShortcutsHelp mode="quiz" />
     </div>
   );

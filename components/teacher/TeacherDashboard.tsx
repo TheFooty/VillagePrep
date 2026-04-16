@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { User, VPClass } from '@/types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 
 interface TeacherDashboardProps {
   user: User;
@@ -23,6 +21,359 @@ interface ClassAnalytics {
   activeToday: number;
   topTopics: string[];
 }
+
+const styles: Record<string, React.CSSProperties> = {
+  container: {
+    minHeight: '100vh',
+    backgroundColor: '#09090b',
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '1rem 1.5rem',
+    borderBottom: '1px solid rgba(255,255,255,0.05)',
+  },
+  logo: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  logoIcon: {
+    width: '2rem',
+    height: '2rem',
+    borderRadius: '0.5rem',
+    background: 'linear-gradient(to bottom right, #10b981, #059669)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoText: {
+    color: '#fafafa',
+    fontWeight: 600,
+  },
+  headerRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  userEmail: {
+    color: '#a1a1aa',
+    fontSize: '0.875rem',
+  },
+  badge: {
+    padding: '0.125rem 0.5rem',
+    borderRadius: '9999px',
+    backgroundColor: 'rgba(16,185,129,0.15)',
+    color: '#10b981',
+    fontSize: '0.75rem',
+  },
+  logoutBtn: {
+    color: '#a1a1aa',
+    fontSize: '0.875rem',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+  },
+  main: {
+    maxWidth: '64rem',
+    margin: '0 auto',
+    padding: '2rem 1rem',
+  },
+  sectionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: '2rem',
+  },
+  sectionTitle: {
+    fontSize: '1.5rem',
+    fontWeight: 700,
+    color: '#fafafa',
+  },
+  createBtn: {
+    padding: '0.625rem 1rem',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.5rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+  },
+  emptyState: {
+    textAlign: 'center' as const,
+    padding: '5rem 0',
+  },
+  emptyIcon: {
+    fontSize: '3.5rem',
+    marginBottom: '1rem',
+  },
+  emptyText: {
+    color: '#a1a1aa',
+    marginBottom: '1rem',
+  },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(20rem, 1fr))',
+    gap: '1rem',
+  },
+  classCard: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '0.75rem',
+    padding: '1.5rem',
+    cursor: 'pointer',
+    transition: 'all 150ms',
+  },
+  classCardHover: {
+    borderColor: 'rgba(16,185,129,0.3)',
+  },
+  classCardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  className: {
+    color: '#fafafa',
+    fontWeight: 500,
+    fontSize: '1.125rem',
+  },
+  classDesc: {
+    color: '#a1a1aa',
+    fontSize: '0.875rem',
+    marginTop: '0.25rem',
+  },
+  classTest: {
+    color: '#10b981',
+    fontSize: '0.875rem',
+    marginTop: '0.5rem',
+  },
+  shareCodeLabel: {
+    color: '#71717a',
+    fontSize: '0.75rem',
+  },
+  shareCode: {
+    color: '#fafafa',
+    fontFamily: 'monospace',
+  },
+  classCardFooter: {
+    marginTop: '1rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid rgba(255,255,255,0.05)',
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '0.875rem',
+    color: '#71717a',
+  },
+  backBtn: {
+    color: '#a1a1aa',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+  },
+  analyticsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(10rem, 1fr))',
+    gap: '1rem',
+    marginBottom: '2rem',
+  },
+  statCard: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '0.75rem',
+    padding: '1rem',
+    textAlign: 'center' as const,
+  },
+  statValue: {
+    fontSize: '2.25rem',
+    fontWeight: 700,
+    color: '#fafafa',
+  },
+  statValueAccent: {
+    color: '#10b981',
+  },
+  statLabel: {
+    color: '#a1a1aa',
+    fontSize: '0.875rem',
+    marginTop: '0.25rem',
+  },
+  tableTitle: {
+    fontSize: '1.25rem',
+    fontWeight: 600,
+    color: '#fafafa',
+    marginBottom: '1rem',
+  },
+  tableContainer: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '0.75rem',
+    overflow: 'hidden',
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse' as const,
+  },
+  th: {
+    textAlign: 'left' as const,
+    color: '#a1a1aa',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    padding: '0.75rem 1rem',
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  td: {
+    padding: '0.75rem 1rem',
+    borderTop: '1px solid rgba(255,255,255,0.05)',
+  },
+  tdText: {
+    color: '#fafafa',
+  },
+  tdTextMuted: {
+    color: '#a1a1aa',
+  },
+  scoreBadge: {
+    padding: '0.25rem 0.5rem',
+    borderRadius: '0.25rem',
+    fontSize: '0.875rem',
+  },
+  chartContainer: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '0.75rem',
+    padding: '1.5rem',
+    marginTop: '2rem',
+  },
+  chartTitle: {
+    fontSize: '1.25rem',
+    fontWeight: 600,
+    color: '#fafafa',
+    marginBottom: '1rem',
+  },
+  chart: {
+    display: 'flex',
+    alignItems: 'flex-end',
+    gap: '0.5rem',
+    height: '8rem',
+  },
+  chartBar: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  chartBarFill: {
+    width: '100%',
+    borderRadius: '0.25rem 0.25rem 0 0',
+    background: 'linear-gradient(to top, #10b981, #059669)',
+  },
+  chartLabel: {
+    color: '#71717a',
+    fontSize: '0.75rem',
+  },
+  chartFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: '0.5rem',
+    color: '#71717a',
+    fontSize: '0.875rem',
+  },
+  modal: {
+    position: 'fixed' as const,
+    inset: 0,
+    zIndex: 50,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '1rem',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    backdropFilter: 'blur(4px)',
+  },
+  modalContent: {
+    backgroundColor: '#18181b',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '1rem',
+    padding: '1.5rem',
+    width: '100%',
+    maxWidth: '28rem',
+  },
+  modalTitle: {
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    color: '#fafafa',
+    marginBottom: '1rem',
+  },
+  input: {
+    width: '100%',
+    padding: '0.5rem 0.75rem',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '0.5rem',
+    color: '#fafafa',
+    fontSize: '0.875rem',
+    outline: 'none',
+  },
+  textarea: {
+    width: '100%',
+    height: '8rem',
+    padding: '0.75rem 1rem',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '0.5rem',
+    color: '#fafafa',
+    fontSize: '0.875rem',
+    resize: 'none' as const,
+    outline: 'none',
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '0.75rem',
+    marginTop: '1.5rem',
+  },
+  cancelBtn: {
+    flex: 1,
+    padding: '0.625rem 1rem',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    color: '#fafafa',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '0.5rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+  },
+  submitBtn: {
+    flex: 1,
+    padding: '0.625rem 1rem',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.5rem',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    cursor: 'pointer',
+  },
+  toast: {
+    position: 'fixed' as const,
+    bottom: '1rem',
+    right: '1rem',
+    zIndex: 50,
+    padding: '0.75rem 1rem',
+    borderRadius: '0.5rem',
+    fontSize: '0.875rem',
+  },
+  toastError: {
+    backgroundColor: 'rgba(239,68,68,0.2)',
+    border: '1px solid #ef4444',
+    color: '#fca5a5',
+  },
+  toastSuccess: {
+    backgroundColor: 'rgba(16,185,129,0.2)',
+    border: '1px solid #10b981',
+    color: '#6ee7b7',
+  },
+};
 
 export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
   const [classes, setClasses] = useState<VPClass[]>([]);
@@ -95,11 +446,11 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
     try {
       const res = await fetch(`/api/progress?classId=${classId}`);
       const data = await res.json();
-      
+
       const students: StudentProgress[] = [];
       const scores: number[] = [];
       let activeCount = 0;
-      
+
       if (data.progress) {
         for (const p of data.progress) {
           scores.push(p.average_score || 0);
@@ -116,9 +467,9 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
           });
         }
       }
-      
+
       const avg = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-      
+
       setAnalytics({
         totalStudents: students.length,
         avgScore: avg,
@@ -149,70 +500,87 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
     return date.toLocaleDateString();
   }
 
+  function getScoreBadgeStyle(score: number): React.CSSProperties {
+    if (score >= 80) return { backgroundColor: 'rgba(16,185,129,0.2)', color: '#6ee7b7' };
+    if (score >= 60) return { backgroundColor: 'rgba(234,179,8,0.2)', color: '#facc15' };
+    return { backgroundColor: 'rgba(239,68,68,0.2)', color: '#fca5a5' };
+  }
+
   return (
-    <div className="min-h-screen bg-[#0a0a0f]">
-      <header className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#14b8a6] to-[#0d9488] flex items-center justify-center">
-            <span className="text-white font-bold text-sm">V</span>
+    <div style={styles.container}>
+      <header style={styles.header}>
+        <div style={styles.logo}>
+          <div style={styles.logoIcon}>
+            <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.875rem' }}>V</span>
           </div>
-          <span className="text-white font-semibold">VillagePrep</span>
+          <span style={styles.logoText}>VillagePrep</span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-400 text-sm">{user.email}</span>
-          <span className="px-2 py-0.5 rounded-full bg-[#14b8a6]/20 text-[#14b8a6] text-xs">teacher</span>
-          <button onClick={onLogout} className="text-gray-400 hover:text-white text-sm">Sign out</button>
+        <div style={styles.headerRight}>
+          <span style={styles.userEmail}>{user.email}</span>
+          <span style={styles.badge}>teacher</span>
+          <button onClick={onLogout} style={styles.logoutBtn}>Sign out</button>
         </div>
       </header>
 
       {toast && (
-        <div className={`fixed bottom-4 right-4 z-50 px-4 py-3 rounded-lg border ${
-          toast.type === 'error' ? 'bg-red-500/20 border-red-500 text-red-300' : 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
-        }`}>
+        <div style={{
+          ...styles.toast,
+          ...(toast.type === 'error' ? styles.toastError : styles.toastSuccess)
+        }}>
           {toast.message}
         </div>
       )}
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main style={styles.main}>
         {view === 'classes' ? (
           <>
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-2xl font-bold text-white">My Classes</h1>
-              <Button onClick={() => setShowCreateModal(true)}>Create Class</Button>
+            <div style={styles.sectionHeader}>
+              <h1 style={styles.sectionTitle}>My Classes</h1>
+              <button style={styles.createBtn} onClick={() => setShowCreateModal(true)}>
+                Create Class
+              </button>
             </div>
 
             {classes.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="text-6xl mb-4">📚</div>
-                <p className="text-gray-400 mb-4">No classes yet. Create your first class to get started.</p>
-                <Button onClick={() => setShowCreateModal(true)}>Create Class</Button>
+              <div style={styles.emptyState}>
+                <div style={styles.emptyIcon}>📚</div>
+                <p style={styles.emptyText}>No classes yet. Create your first class to get started.</p>
+                <button style={styles.createBtn} onClick={() => setShowCreateModal(true)}>
+                  Create Class
+                </button>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 gap-4">
+              <div style={styles.grid}>
                 {classes.map((cls) => (
-                  <div 
-                    key={cls.id} 
+                  <div
+                    key={cls.id}
                     onClick={() => handleClassSelect(cls)}
-                    className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-[#14b8a6]/30 transition-colors cursor-pointer"
+                    style={styles.classCard}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(16,185,129,0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                    }}
                   >
-                    <div className="flex items-start justify-between">
+                    <div style={styles.classCardHeader}>
                       <div>
-                        <h3 className="text-white font-medium text-lg">{cls.name}</h3>
+                        <h3 style={styles.className}>{cls.name}</h3>
                         {cls.description && (
-                          <p className="text-gray-400 text-sm mt-1">{cls.description}</p>
+                          <p style={styles.classDesc}>{cls.description}</p>
                         )}
                         {cls.testDate && (
-                          <p className="text-[#14b8a6] text-sm mt-2">Test: {cls.testDate}</p>
+                          <p style={styles.classTest}>Test: {cls.testDate}</p>
                         )}
                       </div>
                       {cls.shareCode && (
-                        <div className="text-right">
-                          <p className="text-gray-500 text-xs">Code</p>
-                          <p className="text-white font-mono">{cls.shareCode}</p>
+                        <div>
+                          <p style={styles.shareCodeLabel}>Code</p>
+                          <p style={styles.shareCode}>{cls.shareCode}</p>
                         </div>
                       )}
                     </div>
-                    <div className="mt-4 pt-4 border-t border-white/5 flex justify-between text-sm text-gray-500">
+                    <div style={styles.classCardFooter}>
                       <span>View Analytics →</span>
                     </div>
                   </div>
@@ -222,66 +590,63 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
           </>
         ) : (
           <>
-            <div className="flex items-center justify-between mb-8">
-              <button 
-                onClick={() => setView('classes')}
-                className="text-gray-400 hover:text-white"
-              >
+            <div style={styles.sectionHeader}>
+              <button style={styles.backBtn} onClick={() => setView('classes')}>
                 ← Back to Classes
               </button>
-              <h1 className="text-2xl font-bold text-white">{selectedClass?.name}</h1>
+              <h1 style={styles.sectionTitle}>{selectedClass?.name}</h1>
             </div>
 
-            <div className="grid md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                <div className="text-3xl font-bold text-white">{analytics?.totalStudents || 0}</div>
-                <div className="text-gray-400 text-sm">Students</div>
+            <div style={styles.analyticsGrid}>
+              <div style={styles.statCard}>
+                <div style={styles.statValue}>{analytics?.totalStudents || 0}</div>
+                <div style={styles.statLabel}>Students</div>
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                <div className="text-3xl font-bold text-[#14b8a6]">{analytics?.avgScore || 0}%</div>
-                <div className="text-gray-400 text-sm">Avg Score</div>
+              <div style={styles.statCard}>
+                <div style={{ ...styles.statValue, ...styles.statValueAccent }}>
+                  {analytics?.avgScore || 0}%
+                </div>
+                <div style={styles.statLabel}>Avg Score</div>
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                <div className="text-3xl font-bold text-white">{analytics?.activeToday || 0}</div>
-                <div className="text-gray-400 text-sm">Active Today</div>
+              <div style={styles.statCard}>
+                <div style={styles.statValue}>{analytics?.activeToday || 0}</div>
+                <div style={styles.statLabel}>Active Today</div>
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4 text-center">
-                <div className="text-3xl font-bold text-white">
+              <div style={styles.statCard}>
+                <div style={styles.statValue}>
                   {studentRoster.filter(s => s.quizzesCompleted > 0).length}
                 </div>
-                <div className="text-gray-400 text-sm">Quizzes Taken</div>
+                <div style={styles.statLabel}>Quizzes Taken</div>
               </div>
             </div>
 
-            <h2 className="text-xl font-semibold text-white mb-4">Student Roster</h2>
-            
+            <h2 style={styles.tableTitle}>Student Roster</h2>
+
             {studentRoster.length === 0 ? (
-              <div className="text-center py-12 bg-white/5 rounded-xl">
-                <div className="text-gray-400">No student data yet. Students need to join and complete quizzes.</div>
+              <div style={{ ...styles.tableContainer, padding: '3rem', textAlign: 'center' }}>
+                <div style={{ color: '#a1a1aa' }}>
+                  No student data yet. Students need to join and complete quizzes.
+                </div>
               </div>
             ) : (
-              <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                <table className="w-full">
-                  <thead className="bg-white/5">
+              <div style={styles.tableContainer}>
+                <table style={styles.table}>
+                  <thead>
                     <tr>
-                      <th className="text-left text-gray-400 text-sm px-4 py-3">Student</th>
-                      <th className="text-left text-gray-400 text-sm px-4 py-3">Last Active</th>
-                      <th className="text-center text-gray-400 text-sm px-4 py-3">Quizzes</th>
-                      <th className="text-center text-gray-400 text-sm px-4 py-3">Avg Score</th>
+                      <th style={styles.th}>Student</th>
+                      <th style={styles.th}>Last Active</th>
+                      <th style={{ ...styles.th, textAlign: 'center' }}>Quizzes</th>
+                      <th style={{ ...styles.th, textAlign: 'center' }}>Avg Score</th>
                     </tr>
                   </thead>
                   <tbody>
                     {studentRoster.map((student, i) => (
-                      <tr key={i} className="border-t border-white/5">
-                        <td className="text-white px-4 py-3">{student.email}</td>
-                        <td className="text-gray-400 px-4 py-3">{formatDate(student.lastActivity)}</td>
-                        <td className="text-center text-white px-4 py-3">{student.quizzesCompleted}</td>
-                        <td className="text-center px-4 py-3">
-                          <span className={`px-2 py-1 rounded text-sm ${
-                            student.avgScore >= 80 ? 'bg-emerald-500/20 text-emerald-400' :
-                            student.avgScore >= 60 ? 'bg-yellow-500/20 text-yellow-400' :
-                            'bg-red-500/20 text-red-400'
-                          }`}>
+                      <tr key={i}>
+                        <td style={{ ...styles.td, ...styles.tdText }}>{student.email}</td>
+                        <td style={{ ...styles.td, ...styles.tdTextMuted }}>{formatDate(student.lastActivity)}</td>
+                        <td style={{ ...styles.td, ...styles.tdText, textAlign: 'center' }}>{student.quizzesCompleted}</td>
+                        <td style={{ ...styles.td, textAlign: 'center' }}>
+                          <span style={{ ...styles.scoreBadge, ...getScoreBadgeStyle(student.avgScore) }}>
                             {student.avgScore}%
                           </span>
                         </td>
@@ -292,20 +657,22 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
               </div>
             )}
 
-            <h2 className="text-xl font-semibold text-white mt-8 mb-4">Performance Trend</h2>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <div className="h-32 flex items-end gap-2">
+            <div style={styles.chartContainer}>
+              <h2 style={styles.chartTitle}>Performance Trend</h2>
+              <div style={styles.chart}>
                 {[65, 72, 68, 75, 82, 78, 85].map((score, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                    <div 
-                      className="w-full bg-gradient-to-t from-[#14b8a6] to-[#0d9488] rounded-t"
-                      style={{ height: `${score}%` }}
+                  <div key={i} style={styles.chartBar}>
+                    <div
+                      style={{
+                        ...styles.chartBarFill,
+                        height: `${score}%`,
+                      }}
                     />
-                    <span className="text-gray-500 text-xs">Day {i + 1}</span>
+                    <span style={styles.chartLabel}>Day {i + 1}</span>
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between mt-2 text-gray-500 text-sm">
+              <div style={styles.chartFooter}>
                 <span>Last 7 days</span>
                 <span>Average: 75%</span>
               </div>
@@ -315,31 +682,46 @@ export function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
       </main>
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-[#0f0f14] border border-white/10 rounded-2xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold text-white mb-4">Create Class</h2>
-            <Input
-              label="Class Name"
-              placeholder="e.g., Biology 101"
+        <div style={styles.modal} onClick={() => setShowCreateModal(false)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h2 style={styles.modalTitle}>Create Class</h2>
+            <input
+              type="text"
+              placeholder="Class Name (e.g., Biology 101)"
               value={newClass.name}
               onChange={(e) => setNewClass(prev => ({ ...prev, name: e.target.value }))}
+              style={styles.input}
+              onFocus={(e) => e.target.style.borderColor = '#10b981'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
             />
-            <Input
-              label="Description (optional)"
-              placeholder="Brief description"
+            <input
+              type="text"
+              placeholder="Description (optional)"
               value={newClass.description}
               onChange={(e) => setNewClass(prev => ({ ...prev, description: e.target.value }))}
-              className="mt-4"
+              style={{ ...styles.input, marginTop: '1rem' }}
+              onFocus={(e) => e.target.style.borderColor = '#10b981'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
             />
             <textarea
               placeholder="Class content or syllabus..."
               value={newClass.content}
               onChange={(e) => setNewClass(prev => ({ ...prev, content: e.target.value }))}
-              className="mt-4 w-full h-32 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:border-[#14b8a6] focus:outline-none resize-none"
+              style={{ ...styles.textarea, marginTop: '1rem' }}
+              onFocus={(e) => e.target.style.borderColor = '#10b981'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
             />
-            <div className="flex gap-3 mt-6">
-              <Button variant="secondary" onClick={() => setShowCreateModal(false)} className="flex-1">Cancel</Button>
-              <Button onClick={createClass} loading={loading} className="flex-1">Create</Button>
+            <div style={styles.modalActions}>
+              <button style={styles.cancelBtn} onClick={() => setShowCreateModal(false)}>
+                Cancel
+              </button>
+              <button
+                style={styles.submitBtn}
+                onClick={createClass}
+                disabled={loading}
+              >
+                {loading ? 'Creating...' : 'Create'}
+              </button>
             </div>
           </div>
         </div>

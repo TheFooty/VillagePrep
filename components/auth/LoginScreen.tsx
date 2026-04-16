@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 import { User } from '@/types';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 
 interface LoginScreenProps {
   onLogin: (user: User) => void;
@@ -63,74 +61,243 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-[#0a0a0f]">
-      <div className="absolute inset-0">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#14b8a6]/5 to-transparent" />
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.1) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-        <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] rounded-full opacity-[0.06] blur-[120px]" style={{ background: '#14b8a6' }} />
-      </div>
-
-      <div className="relative z-10 w-full max-w-md px-6">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-[#14b8a6] to-[#0d9488] mb-6">
-            <span className="text-white text-3xl font-bold">V</span>
+    <div className="login-page">
+      <div className="login-container">
+        <div className="login-card">
+          <div className="login-header">
+            <div className="login-logo">
+              <span className="logo-mark">V</span>
+            </div>
+            <h1 className="login-title">Welcome back</h1>
+            <p className="login-sub">
+              {step === 'email' 
+                ? 'Enter your email to sign in' 
+                : `Code sent to ${email}`}
+            </p>
           </div>
-          <h2 className="text-3xl font-bold text-white mb-3">Welcome to VillagePrep</h2>
-          <p className="text-gray-400 text-lg">
-            {step === 'email' ? 'Enter your email to sign in' : 'Enter the code sent to your email'}
-          </p>
-        </div>
 
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
           {step === 'email' ? (
-            <>
-              <Input
+            <form className="login-form" onSubmit={(e) => { e.preventDefault(); sendCode(); }}>
+              <input
                 type="email"
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendCode()}
+                className="login-input"
+                autoFocus
               />
-              <Button onClick={sendCode} loading={loading} className="w-full mt-4">
-                Send Code
-              </Button>
-            </>
+              <button type="submit" className="login-btn" disabled={loading || !email}>
+                {loading ? 'Sending...' : 'Continue'}
+              </button>
+            </form>
           ) : (
-            <>
-              <div className="text-center mb-4">
-                <span className="text-gray-400 text-sm">Code sent to </span>
-                <span className="text-white">{email}</span>
-                <button onClick={() => setStep('email')} className="text-[#14b8a6] text-sm ml-2">Change</button>
+            <form className="login-form" onSubmit={(e) => { e.preventDefault(); verifyCode(); }}>
+              <div className="code-header">
+                <span className="code-sent-to">Sent to {email}</span>
+                <button type="button" className="code-change" onClick={() => setStep('email')}>
+                  Change
+                </button>
               </div>
-              <Input
+              <input
                 type="text"
                 placeholder="123456"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                onKeyDown={(e) => e.key === 'Enter' && verifyCode()}
-                className="text-center text-2xl tracking-[0.5em]"
+                className="login-input code-input"
                 maxLength={6}
+                autoFocus
               />
-              <Button onClick={verifyCode} loading={loading} className="w-full mt-4">
-                Verify Code
-              </Button>
-              <p className="text-gray-500 text-xs text-center mt-3">
-                Role detected: <span className="text-[#14b8a6]">{role || 'student'}</span>
-              </p>
-            </>
+              <button type="submit" className="login-btn" disabled={loading || code.length < 6}>
+                {loading ? 'Verifying...' : 'Verify'}
+              </button>
+              <p className="code-role">Role: <span>{role || 'student'}</span></p>
+            </form>
           )}
 
           {error && (
-            <div className="mt-6 p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm text-center">
-              {error}
-            </div>
+            <div className="login-error">{error}</div>
           )}
         </div>
 
-        <p className="text-gray-500 text-sm text-center mt-8">
+        <p className="login-footer">
           By continuing, you agree to our Terms of Service
         </p>
       </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        
+        .login-page {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: #09090b;
+          padding: 24px;
+          font-family: 'DM Sans', system-ui, sans-serif;
+        }
+        
+        .login-container {
+          width: 100%;
+          max-width: 400px;
+        }
+        
+        .login-card {
+          background: #18181b;
+          border: 1px solid #27272a;
+          border-radius: 20px;
+          padding: 40px;
+        }
+        
+        .login-header {
+          text-align: center;
+          margin-bottom: 32px;
+        }
+        
+        .login-logo {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 24px;
+        }
+        
+        .logo-mark {
+          width: 56px;
+          height: 56px;
+          background: linear-gradient(135deg, #10b981, #059669);
+          border-radius: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 24px;
+          color: white;
+        }
+        
+        .login-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: #fafafa;
+          margin-bottom: 8px;
+        }
+        
+        .login-sub {
+          font-size: 15px;
+          color: #a1a1aa;
+        }
+        
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        
+        .login-input {
+          width: 100%;
+          padding: 14px 16px;
+          background: #09090b;
+          border: 1px solid #27272a;
+          border-radius: 12px;
+          font-size: 16px;
+          color: #fafafa;
+          outline: none;
+          transition: border-color 0.2s;
+          font-family: inherit;
+        }
+        
+        .login-input::placeholder {
+          color: #71717a;
+        }
+        
+        .login-input:focus {
+          border-color: #10b981;
+        }
+        
+        .code-input {
+          text-align: center;
+          font-size: 24px;
+          letter-spacing: 8px;
+        }
+        
+        .code-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+        
+        .code-sent-to {
+          font-size: 13px;
+          color: #a1a1aa;
+        }
+        
+        .code-change {
+          background: none;
+          border: none;
+          font-size: 13px;
+          color: #10b981;
+          cursor: pointer;
+          font-family: inherit;
+        }
+        
+        .code-change:hover {
+          text-decoration: underline;
+        }
+        
+        .login-btn {
+          width: 100%;
+          padding: 14px 24px;
+          background: #10b981;
+          color: white;
+          border: none;
+          border-radius: 12px;
+          font-size: 15px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: inherit;
+        }
+        
+        .login-btn:hover:not(:disabled) {
+          background: #059669;
+          transform: translateY(-1px);
+        }
+        
+        .login-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        
+        .code-role {
+          text-align: center;
+          font-size: 13px;
+          color: #71717a;
+          margin-top: 8px;
+        }
+        
+        .code-role span {
+          color: #10b981;
+          font-weight: 500;
+        }
+        
+        .login-error {
+          margin-top: 16px;
+          padding: 12px 16px;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 10px;
+          color: #fca5a5;
+          font-size: 14px;
+          text-align: center;
+        }
+        
+        .login-footer {
+          text-align: center;
+          margin-top: 24px;
+          font-size: 13px;
+          color: #52525b;
+        }
+      `}</style>
     </div>
   );
 }
