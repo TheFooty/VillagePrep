@@ -4,23 +4,34 @@ import { getSupabase } from '@/lib/supabase';
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const email = searchParams.get('email');
-  
+  const classId = searchParams.get('classId');
+
   if (!email) {
     return NextResponse.json({ error: 'Email required' }, { status: 400 });
   }
-  
+
   const supabase = getSupabase();
-  
-  const { data, error } = await supabase
+
+  let query = supabase
     .from('classes')
     .select('*')
     .eq('teacher_email', email);
-  
+
+  if (classId) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(classId)) {
+      return NextResponse.json({ error: 'Invalid classId format' }, { status: 400 });
+    }
+    query = query.eq('id', classId);
+  }
+
+  const { data, error } = await query;
+
   if (error) {
     console.error('Error fetching classes:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  
+
   return NextResponse.json({ classes: data || [] });
 }
 
