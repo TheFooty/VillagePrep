@@ -14,7 +14,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const [role, setRole] = useState<'teacher' | 'student' | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const codeInputRef = useRef<HTMLInputElement>(null);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -24,6 +27,23 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       }
     };
   }, []);
+
+  // Focus input when step changes
+  useEffect(() => {
+    if (step === 'email' && emailInputRef.current) {
+      emailInputRef.current.focus();
+    } else if (step === 'code' && codeInputRef.current) {
+      codeInputRef.current.focus();
+    }
+  }, [step]);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   async function sendCode() {
     if (!email.trim()) {
@@ -114,6 +134,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   }
 
   async function resendCode() {
+    if (resendCooldown > 0 || loading) return;
+
     setLoading(true);
     setError('');
 
@@ -135,6 +157,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       }
 
       setError('');
+      setResendCooldown(30);
       showToast('Code sent! Check your email.');
     } catch {
       setError('Network error. Please try again.');
@@ -174,6 +197,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           {step === 'email' ? (
             <form className="login-form" onSubmit={(e) => { e.preventDefault(); sendCode(); }}>
               <input
+                ref={emailInputRef}
                 type="email"
                 placeholder="your@email.com"
                 value={email}
@@ -181,6 +205,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 className="login-input"
                 autoFocus
                 disabled={loading}
+                autoComplete="email"
               />
               <button type="submit" className="login-btn" disabled={loading || !email.trim()}>
                 {loading ? 'Sending...' : 'Continue'}
@@ -195,6 +220,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 </button>
               </div>
               <input
+                ref={codeInputRef}
                 type="text"
                 placeholder="123456"
                 value={code}
@@ -203,13 +229,19 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 maxLength={6}
                 autoFocus
                 disabled={loading}
+                autoComplete="one-time-code"
               />
               <button type="submit" className="login-btn" disabled={loading || code.length < 6}>
                 {loading ? 'Verifying...' : 'Verify'}
               </button>
               <div className="resend-container">
-                <button type="button" className="resend-btn" onClick={resendCode} disabled={loading}>
-                  Resend code
+                <button
+                  type="button"
+                  className="resend-btn"
+                  onClick={resendCode}
+                  disabled={loading || resendCooldown > 0}
+                >
+                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
                 </button>
               </div>
               <p className="code-role">Role: <span>{role || 'student'}</span></p>
