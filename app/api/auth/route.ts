@@ -60,23 +60,27 @@ async function storeAuthCode(supabase: any, email: string, code: string): Promis
 
   // Count codes sent in last 15 minutes (not hour) - more lenient
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-  const { count } = await supabase
+  const { count, error } = await supabase
     .from('auth_codes')
     .select('*', { count: 'exact', head: true })
     .eq('email', email)
     .gte('created_at', fifteenMinutesAgo);
+
+  console.log(`[storeAuthCode] email=${email}, count=${count}, error=${JSON.stringify(error)}`);
 
   const recentCount = count || 0;
   if (recentCount >= 5) { // 5 codes per 15 minutes
     return { success: false, remaining: 0 };
   }
 
-  const { error } = await supabase
+  const { error: insertError } = await supabase
     .from('auth_codes')
     .insert([{ email, code_hash: hashed, expires_at: expiresAt, attempts: 0 }]);
 
-  if (error) {
-    console.error('Failed to store auth code:', error);
+  console.log(`[storeAuthCode] insert result: error=${JSON.stringify(insertError)}`);
+
+  if (insertError) {
+    console.error('Failed to store auth code:', insertError);
     return { success: false, remaining: 0 };
   }
 
