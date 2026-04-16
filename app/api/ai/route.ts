@@ -43,13 +43,13 @@ function setCachedResponse(key: string, response: string): void {
 }
 
 async function* generateStream(prompt: string): AsyncGenerator<string> {
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    yield '[Error: GROQ_API_KEY not configured]';
+    yield '[Error: OPENAI_API_KEY not configured]';
     return;
   }
 
-  const url = 'https://api.groq.com/openai/v1/chat/completions';
+  const url = 'https://api.openai.com/v1/chat/completions';
 
   try {
     const controller = new AbortController();
@@ -62,10 +62,10 @@ async function* generateStream(prompt: string): AsyncGenerator<string> {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 4096,
+        max_tokens: 2048,
         stream: true,
       }),
       signal: controller.signal,
