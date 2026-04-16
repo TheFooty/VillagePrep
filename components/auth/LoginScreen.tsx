@@ -26,6 +26,10 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 429) {
+          setError(data.error || 'Too many attempts. Try clearing codes below.');
+          return;
+        }
         setError(data.error || 'Failed to send code');
         return;
       }
@@ -33,6 +37,23 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       setStep('code');
     } catch {
       setError('Network error. Try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function clearMyCodes() {
+    if (!email) return;
+    setLoading(true);
+    try {
+      await fetch(`/api/auth?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
+        method: 'DELETE',
+      });
+      setError('');
+      setStep('email');
+      setCode('');
+    } catch {
+      setError('Failed to reset. Try again.');
     } finally {
       setLoading(false);
     }
@@ -115,7 +136,14 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           )}
 
           {error && (
-            <div className="login-error">{error}</div>
+            <div className="login-error">
+              {error}
+              {error.includes('Too many') && (
+                <button type="button" className="clear-btn" onClick={clearMyCodes}>
+                  Clear my codes & try again
+                </button>
+              )}
+            </div>
           )}
         </div>
 
@@ -289,6 +317,25 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           color: #fca5a5;
           font-size: 14px;
           text-align: center;
+        }
+
+        .clear-btn {
+          display: block;
+          margin: 12px auto 0;
+          background: none;
+          border: 1px solid rgba(239, 68, 68, 0.4);
+          border-radius: 8px;
+          padding: 8px 16px;
+          color: #fca5a5;
+          font-size: 13px;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-family: inherit;
+        }
+
+        .clear-btn:hover {
+          background: rgba(239, 68, 68, 0.1);
+          border-color: rgba(239, 68, 68, 0.6);
         }
         
         .login-footer {
