@@ -46,12 +46,17 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     if (!email) return;
     setLoading(true);
     try {
-      await fetch(`/api/auth?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
+      const res = await fetch(`/api/auth?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
         method: 'DELETE',
       });
-      setError('');
-      setStep('email');
-      setCode('');
+      if (res.ok) {
+        setError('');
+        setStep('email');
+        setCode('');
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to clear codes. Try again.');
+      }
     } catch {
       setError('Failed to reset. Try again.');
     } finally {
