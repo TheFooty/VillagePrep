@@ -1,14 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient, isValidEmail } from '@/lib/auth';
+import { getSupabaseClient, isValidUUID, validateSession, unauthorizedResponse } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
     const type = searchParams.get('type') || 'files';
 
     if (!userId) {
       return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    }
+
+    if (!isValidUUID(userId)) {
+      return NextResponse.json({ error: 'Invalid userId format' }, { status: 400 });
+    }
+
+    if (userId !== sessionUser.id) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (typeof type !== 'string' || type.length > 50) {
@@ -38,10 +51,23 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { userId, type, content } = await req.json();
 
     if (!userId || !type) {
       return NextResponse.json({ error: 'User ID and type required' }, { status: 400 });
+    }
+
+    if (!isValidUUID(userId)) {
+      return NextResponse.json({ error: 'Invalid userId format' }, { status: 400 });
+    }
+
+    if (userId !== sessionUser.id) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (typeof type !== 'string' || type.length > 50) {
@@ -93,12 +119,25 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
     const type = searchParams.get('type');
 
     if (!userId || !type) {
       return NextResponse.json({ error: 'User ID and type required' }, { status: 400 });
+    }
+
+    if (!isValidUUID(userId)) {
+      return NextResponse.json({ error: 'Invalid userId format' }, { status: 400 });
+    }
+
+    if (userId !== sessionUser.id) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (typeof type !== 'string' || type.length > 50) {
