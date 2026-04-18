@@ -297,8 +297,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <div className="login-error">
               {error}
               {error.includes('Too many') && (
-                <button type="button" className="clear-btn" onClick={clearMyCodes}>
-                  Clear my codes & try again
+                <button type="button" className="clear-btn" onClick={clearMyCodes} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <span className="btn-spinner"></span>
+                      Clearing...
+                    </>
+                  ) : 'Clear my codes & try again'}
                 </button>
               )}
             </div>
@@ -536,7 +541,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           font-family: inherit;
         }
 
-        .clear-btn:hover {
+        .clear-btn:hover:not(:disabled) {
           background: rgba(239, 68, 68, 0.1);
           border-color: rgba(239, 68, 68, 0.6);
         }
@@ -544,6 +549,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         .clear-btn:focus-visible {
           outline: 2px solid #ef4444;
           outline-offset: 2px;
+        }
+
+        .clear-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
 
         .btn-spinner {

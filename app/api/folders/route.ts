@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient, isValidEmail, isValidUUID } from '@/lib/auth';
+import { getSupabaseClient, isValidEmail, isValidUUID, validateSession, unauthorizedResponse } from '@/lib/auth';
 
 export async function GET(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { searchParams } = new URL(req.url);
     const email = searchParams.get('email');
 
@@ -12,6 +17,10 @@ export async function GET(req: NextRequest) {
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    if (email.toLowerCase() !== sessionUser.email.toLowerCase()) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     const supabase = getSupabaseClient();
@@ -36,7 +45,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, name, color, classIds } = await req.json();
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
+    const { email, name, color } = await req.json();
 
     if (!email || !name) {
       return NextResponse.json({ error: 'Email and folder name required' }, { status: 400 });
@@ -44,6 +58,10 @@ export async function POST(req: NextRequest) {
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    if (email.toLowerCase() !== sessionUser.email.toLowerCase()) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (typeof name !== 'string' || name.trim().length === 0) {
@@ -87,6 +105,11 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { email, folderId, name, color } = await req.json();
 
     if (!email || !folderId) {
@@ -95,6 +118,10 @@ export async function PUT(req: NextRequest) {
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    if (email.toLowerCase() !== sessionUser.email.toLowerCase()) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (!isValidUUID(folderId)) {
@@ -142,6 +169,11 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { searchParams } = new URL(req.url);
     const folderId = searchParams.get('folderId');
     const email = searchParams.get('email');
@@ -152,6 +184,10 @@ export async function DELETE(req: NextRequest) {
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    if (email.toLowerCase() !== sessionUser.email.toLowerCase()) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (!isValidUUID(folderId)) {

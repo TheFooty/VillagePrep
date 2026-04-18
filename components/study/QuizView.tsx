@@ -135,37 +135,6 @@ export const QuizView = memo(function QuizView({ questions, onComplete }: QuizVi
   const [showResult, setShowResult] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
-  if (questions.length === 0) {
-    return (
-      <div style={{ maxWidth: '42rem', margin: '0 auto', padding: '24px' }}>
-        <div style={{
-          textAlign: 'center',
-          padding: '60px 20px',
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: '1rem',
-        }}>
-          <div style={{ fontSize: '64px', marginBottom: '20px', opacity: 0.4 }}>❓</div>
-          <h3 style={{ color: '#fafafa', fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>No questions</h3>
-          <p style={{ color: '#71717a', fontSize: '14px' }}>Generate a quiz from your study materials to get started.</p>
-        </div>
-      </div>
-    );
-  }
-
-  useEffect(() => {
-    if (timeLeft === null || showResult) return;
-    if (timeLeft <= 0) {
-      const final = answers;
-      const score = final.filter((a, i) => a === questions[i].correct).length;
-      setShowResult(true);
-      onComplete?.(score, questions.length, final);
-      return;
-    }
-    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [timeLeft, showResult, answers, questions, onComplete]);
-
   const handleAnswer = useCallback((index: number) => {
     const newAnswers = [...answers];
     newAnswers[current] = index;
@@ -182,13 +151,6 @@ export const QuizView = memo(function QuizView({ questions, onComplete }: QuizVi
       }
     }, 500);
   }, [answers, current, questions, onComplete]);
-
-  const handleComplete = useCallback((finalAnswers?: number[]) => {
-    const final = finalAnswers || answers;
-    const score = final.filter((a, i) => a === questions[i].correct).length;
-    setShowResult(true);
-    onComplete?.(score, questions.length, final);
-  }, [answers, questions, onComplete]);
 
   const handleNext = useCallback(() => {
     if (current < questions.length - 1 && answers[current] !== undefined) {
@@ -209,18 +171,48 @@ export const QuizView = memo(function QuizView({ questions, onComplete }: QuizVi
     return 'Keep practicing!';
   }, []);
 
-  if (questions.length === 0) return null;
-
-  const question = questions[current];
-  const isComplete = showResult || answers.length >= questions.length;
+  const currentOptions = questions[current]?.options.length ?? 4;
 
   useKeyboardShortcuts({
     onAnswer: handleAnswer,
     onNext: handleNext,
     isQuizMode: true,
-    currentOptions: question.options.length,
+    currentOptions,
   });
 
+  useEffect(() => {
+    if (timeLeft === null || showResult || questions.length === 0) return;
+    if (timeLeft <= 0) {
+      const final = answers;
+      const score = final.filter((a, i) => a === questions[i].correct).length;
+      setShowResult(true);
+      onComplete?.(score, questions.length, final);
+      return;
+    }
+    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [timeLeft, showResult, answers, questions, onComplete]);
+
+  if (questions.length === 0) {
+    return (
+      <div style={{ maxWidth: '42rem', margin: '0 auto', padding: '24px' }}>
+        <div style={{
+          textAlign: 'center',
+          padding: '60px 20px',
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '1rem',
+        }}>
+          <div style={{ fontSize: '64px', marginBottom: '20px', opacity: 0.4 }}>❓</div>
+          <h3 style={{ color: '#fafafa', fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>No questions</h3>
+          <p style={{ color: '#71717a', fontSize: '14px' }}>Generate a quiz from your study materials to get started.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const question = questions[current];
+  const isComplete = showResult || answers.length >= questions.length;
   const answered = answers[current] !== undefined;
   const correctCount = answers.filter((a, i) => a === questions[i].correct).length;
 
