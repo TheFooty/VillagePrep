@@ -8,10 +8,20 @@ interface LandingPageProps {
 
 export function LandingPage({ onGetStarted }: LandingPageProps) {
   const [mounted, setMounted] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const smoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, target: string) => {
+    e.preventDefault();
+    const element = document.querySelector(target);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setMobileMenuOpen(false);
+    }
+  };
 
   return (
     <div className="landing-page">
@@ -23,13 +33,37 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             <span className="logo-text">VillagePrep</span>
           </a>
           <div className="nav-links">
-            <a href="#features" className="nav-link">Features</a>
-            <a href="#how" className="nav-link">How it Works</a>
+            <a href="#features" className="nav-link" onClick={(e) => smoothScroll(e, '#features')}>Features</a>
+            <a href="#how" className="nav-link" onClick={(e) => smoothScroll(e, '#how')}>How it Works</a>
             <button onClick={onGetStarted} className="nav-cta">
               Start Free
             </button>
           </div>
+          <button
+            className="mobile-menu-btn"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            )}
+          </button>
         </div>
+        {mobileMenuOpen && (
+          <div className="mobile-menu">
+            <a href="#features" className="mobile-nav-link" onClick={(e) => smoothScroll(e, '#features')}>Features</a>
+            <a href="#how" className="mobile-nav-link" onClick={(e) => smoothScroll(e, '#how')}>How it Works</a>
+            <button onClick={onGetStarted} className="mobile-nav-cta">
+              Start Free
+            </button>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}
@@ -338,7 +372,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           cursor: pointer;
           transition: background 0.2s, transform 0.2s;
         }
-        
+
         .nav-cta:hover {
           background: var(--accent-hover);
           transform: translateY(-1px);
@@ -347,6 +381,83 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         .nav-cta:focus-visible {
           outline: 2px solid var(--accent);
           outline-offset: 2px;
+        }
+
+        .mobile-menu-btn {
+          display: none;
+          background: none;
+          border: none;
+          color: var(--text);
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 8px;
+          transition: background 0.2s;
+        }
+
+        .mobile-menu-btn:hover {
+          background: rgba(255,255,255,0.1);
+        }
+
+        .mobile-menu-btn:focus-visible {
+          outline: 2px solid var(--accent);
+          outline-offset: 2px;
+        }
+
+        .mobile-menu {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: rgba(9, 9, 11, 0.98);
+          backdrop-filter: blur(12px);
+          border-bottom: 1px solid var(--border);
+          padding: 24px;
+          flex-direction: column;
+          gap: 16px;
+          animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .mobile-nav-link {
+          color: var(--text-muted);
+          text-decoration: none;
+          font-size: 16px;
+          font-weight: 500;
+          padding: 12px 0;
+          border-bottom: 1px solid var(--border);
+          transition: color 0.2s;
+        }
+
+        .mobile-nav-link:hover {
+          color: var(--text);
+        }
+
+        .mobile-nav-cta {
+          background: var(--accent);
+          color: white;
+          border: none;
+          padding: 14px 20px;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          width: 100%;
+          transition: background 0.2s;
+        }
+
+        .mobile-nav-cta:hover {
+          background: var(--accent-hover);
         }
 
         /* Hero */

@@ -8,13 +8,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'YouTube URL required' }, { status: 400 });
     }
 
+if (typeof url !== 'string' || url.length > 500) {
+      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+    }
+
     const videoIdMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
-    
+
     if (!videoIdMatch) {
       return NextResponse.json({ error: 'Invalid YouTube URL' }, { status: 400 });
     }
 
     const videoId = videoIdMatch[1];
+
+    if (!videoId || videoId.length !== 11) {
+      return NextResponse.json({ error: 'Invalid YouTube video ID' }, { status: 400 });
+    }
     
     let transcript: { start: number; duration: number; text: string }[] = [];
     
@@ -64,9 +72,13 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const fullText = transcript.map((t) => t.text).join(' ');
-    
-    return NextResponse.json({ 
+const fullText = transcript.map((t) => t.text).join(' ');
+
+    if (!fullText.trim()) {
+      return NextResponse.json({ error: 'No text content found in transcript' }, { status: 400 });
+    }
+
+    return NextResponse.json({
       text: fullText,
       videoId,
       hasTranscript: true

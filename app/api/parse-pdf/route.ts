@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createRequire } from 'module';
+
+const requirePdfParse = createRequire(import.meta.url);
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,8 +39,8 @@ export async function POST(req: NextRequest) {
     }
     else if (fileName.endsWith('.pdf')) {
       try {
-        const pdfParseModule = await import('pdf-parse');
-        const pdfParse = pdfParseModule.pdfParse || pdfParseModule.default;
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const pdfParse = requirePdfParse('pdf-parse');
         const data = await pdfParse(buffer);
         extractedText = data.text;
       } catch (pdfErr) {

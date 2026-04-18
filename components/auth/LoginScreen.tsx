@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { User } from '@/types';
 
 interface LoginScreenProps {
@@ -18,6 +18,18 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const emailInputRef = useRef<HTMLInputElement>(null);
   const codeInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -45,11 +57,16 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     }
   }, [resendCooldown]);
 
-  async function sendCode() {
+  const sendCode = useCallback(async () => {
     if (!email.trim()) {
       setError('Please enter your email address');
       return;
     }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     setLoading(true);
     setError('');
@@ -59,6 +76,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        signal: abortControllerRef.current.signal,
       });
       const data = await res.json();
 
@@ -76,19 +94,28 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       setRole(data.role);
       setStep('code');
     } catch {
+      if (abortControllerRef.current?.signal.aborted) return;
       setError('Network error. Please check your connection and try again.');
     } finally {
-      setLoading(false);
+      if (!abortControllerRef.current?.signal.aborted) {
+        setLoading(false);
+      }
     }
-  }
+  }, [email]);
 
-  async function clearMyCodes() {
+  const clearMyCodes = useCallback(async () => {
     if (!email) return;
+    
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
     
     setLoading(true);
     try {
       const res = await fetch(`/api/auth?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
         method: 'DELETE',
+        signal: abortControllerRef.current.signal,
       });
       if (res.ok) {
         setError('');
@@ -99,17 +126,25 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         setError(data.error || 'Failed to clear codes. Please try again.');
       }
     } catch {
+      if (abortControllerRef.current?.signal.aborted) return;
       setError('Failed to reset. Please try again.');
     } finally {
-      setLoading(false);
+      if (!abortControllerRef.current?.signal.aborted) {
+        setLoading(false);
+      }
     }
-  }
+  }, [email]);
 
-  async function verifyCode() {
+  const verifyCode = useCallback(async () => {
     if (code.length < 6) {
       setError('Please enter the 6-digit code');
       return;
     }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     setLoading(true);
     setError('');
@@ -119,6 +154,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase(), code: code.trim() }),
+        signal: abortControllerRef.current.signal,
       });
       const data = await res.json();
 
@@ -129,14 +165,22 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
       onLogin({ email: data.email, role: data.role, userId: data.userId });
     } catch {
+      if (abortControllerRef.current?.signal.aborted) return;
       setError('Verification failed. Please try again.');
     } finally {
-      setLoading(false);
+      if (!abortControllerRef.current?.signal.aborted) {
+        setLoading(false);
+      }
     }
-  }
+  }, [code, email, onLogin]);
 
-  async function resendCode() {
+  const resendCode = useCallback(async () => {
     if (resendCooldown > 0 || loading) return;
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
     setLoading(true);
     setError('');
@@ -146,6 +190,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        signal: abortControllerRef.current.signal,
       });
       const data = await res.json();
 
@@ -162,11 +207,14 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       setResendCooldown(30);
       showToast('Code sent! Check your email.');
     } catch {
+      if (abortControllerRef.current?.signal.aborted) return;
       setError('Network error. Please try again.');
     } finally {
-      setLoading(false);
+      if (!abortControllerRef.current?.signal.aborted) {
+        setLoading(false);
+      }
     }
-  }
+  }, [email, resendCooldown, loading]);
 
   function showToast(message: string) {
     setError(message);
