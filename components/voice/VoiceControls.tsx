@@ -1,6 +1,6 @@
 'use client';
 
-import { useFlashcardAudio } from '@/hooks/useVoice';
+import { useVoice, useFlashcardAudio } from '@/hooks/useVoice';
 
 interface VoiceControlsProps {
   front: string;
@@ -94,5 +94,3 @@ export function VoiceInputButton({ onTranscript }: VoiceInputButtonProps) {
     </button>
   );
 }
-
-import { useVoice } from '@/hooks/useVoice';

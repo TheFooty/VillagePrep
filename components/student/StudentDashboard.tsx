@@ -351,6 +351,8 @@ export const StudentDashboard = memo(function StudentDashboard({ user, onLogout 
                             : answers[i] === oi
                             ? 'wrong'
                             : 'disabled'
+                          : answers[i] === oi
+                          ? 'selected'
                           : ''
                       }`}
                       onClick={() => {
@@ -819,23 +821,35 @@ export const StudentDashboard = memo(function StudentDashboard({ user, onLogout 
           border-radius: 16px;
           padding: 24px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           text-align: center;
         }
-        
+
         .flashcard:hover {
           border-color: #10b981;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         }
-        
+
         .flashcard-text {
           font-size: 18px;
           color: #fafafa;
           margin-bottom: 12px;
+          transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
+        .flashcard.half-flipped .flashcard-text {
+          transform: rotateY(90deg);
+        }
+
+        .flashcard.half-flipped .flashcard-hint {
+          opacity: 0;
+        }
+
         .flashcard-hint {
           font-size: 12px;
           color: #71717a;
+          transition: opacity 0.2s;
         }
         
         .quiz {
@@ -883,10 +897,13 @@ export const StudentDashboard = memo(function StudentDashboard({ user, onLogout 
           cursor: pointer;
           transition: all 0.2s;
           font-family: inherit;
+          position: relative;
+          overflow: hidden;
         }
-        
+
         .quiz-option:hover:not(.disabled):not(:disabled) {
           border-color: #10b981;
+          background: rgba(16, 185, 129, 0.05);
         }
 
         .quiz-option:focus-visible {
@@ -894,16 +911,28 @@ export const StudentDashboard = memo(function StudentDashboard({ user, onLogout 
           outline-offset: 2px;
         }
 
+        .quiz-option.selected {
+          border-color: #10b981;
+          background: rgba(16, 185, 129, 0.1);
+          animation: pulse-selection 0.3s ease;
+        }
+
+        @keyframes pulse-selection {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+          100% { transform: scale(1); }
+        }
+
         .quiz-option.correct {
           background: rgba(16, 185, 129, 0.2);
           border-color: #10b981;
         }
-        
+
         .quiz-option.wrong {
           background: rgba(239, 68, 68, 0.2);
           border-color: #ef4444;
         }
-        
+
         .quiz-option.disabled {
           opacity: 0.5;
         }

@@ -4,11 +4,12 @@ import crypto from 'crypto';
 
 type Role = 'teacher' | 'student';
 
-const SESSION_SECRET = process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-production';
+const SESSION_SECRET = process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET;
 const CODE_EXPIRY_MINUTES = 10;
 const MAX_ATTEMPTS_PER_CODE = 5;
 const MAX_CODES_PER_15_MIN = 5;
 const SESSION_EXPIRY_DAYS = 7;
+const CSRF_SECRET = process.env.CSRF_SECRET || process.env.SESSION_SECRET;
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -249,10 +250,10 @@ export async function PUT(req: NextRequest) {
         console.error('Failed to create profile:', error);
         return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 });
       }
-      userData = newProfile;
+      userData = newProfile!;
     }
 
-    const sessionToken = await createSession(supabase, userData.id, email);
+    const sessionToken = await createSession(supabase, userData!.id, email);
 
     if (!sessionToken) {
       return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
@@ -260,14 +261,14 @@ export async function PUT(req: NextRequest) {
 
     const response = NextResponse.json({
       email,
-      role: userData.role || detectRole(email),
-      userId: userData.id
+      role: userData!.role || detectRole(email),
+      userId: userData!.id
     });
 
     response.cookies.set('vpSession', sessionToken, {
       maxAge: SESSION_EXPIRY_DAYS * 24 * 60 * 60,
       httpOnly: true,
-      sameSite: 'lax',
+      sameSite: 'strict',
       path: '/',
       secure: process.env.NODE_ENV === 'production'
     });

@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     else if (fileName.endsWith('.pdf')) {
       try {
         const pdfParseModule = await import('pdf-parse');
-        const pdfParse = pdfParseModule.default || pdfParseModule;
+        const pdfParse = pdfParseModule.pdfParse || pdfParseModule.default;
         const data = await pdfParse(buffer);
         extractedText = data.text;
       } catch (pdfErr) {

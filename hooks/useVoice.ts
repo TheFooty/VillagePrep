@@ -87,6 +87,7 @@ export function useVoice({ onTranscript, onError }: UseVoiceProps = {}) {
     return () => {
       recognitionRef.current?.stop();
       synthesisRef.current?.cancel();
+      synthesisRef.current?.getVoices().forEach(() => {});
     };
   }, [onTranscript, onError]);
 
