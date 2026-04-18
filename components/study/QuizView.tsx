@@ -87,6 +87,10 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: 'rgba(239,68,68,0.15)',
     borderColor: '#ef4444',
   },
+  optionSelected: {
+    backgroundColor: 'rgba(16,185,129,0.15)',
+    borderColor: '#10b981',
+  },
   explanation: {
     marginTop: '1rem',
     padding: '0.75rem',
@@ -261,6 +265,8 @@ export const QuizView = memo(function QuizView({ questions, onComplete }: QuizVi
               optionStyle = isCorrect
                 ? { ...optionStyle, ...styles.optionCorrect }
                 : { ...optionStyle, ...styles.optionIncorrect };
+            } else if (isSelected) {
+              optionStyle = { ...optionStyle, ...styles.optionSelected };
             }
 
             return (
