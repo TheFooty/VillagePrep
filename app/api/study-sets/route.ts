@@ -45,6 +45,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { email, title, folderId } = await req.json();
 
     if (!email || !title) {
@@ -53,6 +58,10 @@ export async function POST(req: NextRequest) {
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    if (email.toLowerCase() !== sessionUser.email.toLowerCase()) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (typeof title !== 'string' || title.trim().length === 0) {

@@ -1011,12 +1011,29 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         @media (max-width: 768px) {
           .nav {
             padding: 0 24px;
+            flex-direction: column;
+            height: auto;
+            align-items: stretch;
           }
-          
+
+          .nav-inner {
+            height: 72px;
+          }
+
           .nav-links {
-            gap: 16px;
+            display: none;
           }
-          
+
+          .mobile-menu-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+
+          .mobile-menu {
+            display: flex;
+          }
+
           .nav-link {
             display: none;
           }
