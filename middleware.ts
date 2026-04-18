@@ -9,6 +9,13 @@ function isValidUUID(uuid: string): boolean {
   return UUID_REGEX.test(uuid);
 }
 
+const ALLOWED_ORIGINS = [
+  'https://www.villageprep.net',
+  'https://villageprep.net',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+];
+
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
@@ -25,8 +32,7 @@ export function middleware(req: NextRequest) {
 
   const origin = req.headers.get('origin');
   if (origin && process.env.NODE_ENV === 'production') {
-    const allowedOrigins = [process.env.NEXTAUTH_URL].filter(Boolean);
-    if (!allowedOrigins.includes(origin)) {
+    if (!ALLOWED_ORIGINS.includes(origin)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
   }
