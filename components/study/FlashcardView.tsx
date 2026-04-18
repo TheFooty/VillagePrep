@@ -16,6 +16,44 @@ export const FlashcardView = memo(function FlashcardView({ cards, onMaster, onRa
   const [flipped, setFlipped] = useState(false);
   const [progress, setProgress] = useState<FlashcardProgress>(getInitialProgress());
 
+  const handleRate = useCallback((quality: Quality) => {
+    const newProgress = calculateNextReview(quality, progress);
+    setProgress(newProgress);
+    onMaster?.(current, newProgress);
+    onRate?.(quality);
+
+    setFlipped(false);
+    if (current < cards.length - 1) {
+      setCurrent(current + 1);
+    } else {
+      setCurrent(0);
+    }
+  }, [progress, current, cards.length, onMaster, onRate]);
+
+  const handleNext = useCallback(() => {
+    if (current < cards.length - 1) {
+      setCurrent(current + 1);
+      setFlipped(false);
+    }
+  }, [current, cards.length]);
+
+  const handlePrev = useCallback(() => {
+    if (current > 0) {
+      setCurrent(current - 1);
+      setFlipped(false);
+    }
+  }, [current]);
+
+  const handleFlip = useCallback(() => setFlipped(f => !f), []);
+
+  useKeyboardShortcuts({
+    onFlip: handleFlip,
+    onRate: handleRate,
+    onNext: handleNext,
+    onPrev: handlePrev,
+    isFlipped: flipped,
+  });
+
   if (cards.length === 0) {
     return (
       <div className="flashcard-view">
@@ -50,43 +88,6 @@ export const FlashcardView = memo(function FlashcardView({ cards, onMaster, onRa
   }
 
   const card = cards[current];
-
-  const handleRate = useCallback((quality: Quality) => {
-    const newProgress = calculateNextReview(quality, progress);
-    setProgress(newProgress);
-    onMaster?.(current, newProgress);
-    onRate?.(quality);
-
-    setFlipped(false);
-    if (current < cards.length - 1) {
-      setCurrent(current + 1);
-    } else {
-      setCurrent(0);
-    }
-  }, [progress, current, cards.length, onMaster, onRate]);
-
-  const handleNext = useCallback(() => {
-    if (current < cards.length - 1) {
-      setCurrent(current + 1);
-      setFlipped(false);
-    }
-  }, [current, cards.length]);
-
-  const handlePrev = useCallback(() => {
-    if (current > 0) {
-      setCurrent(current - 1);
-      setFlipped(false);
-    }
-  }, [current]);
-
-  useKeyboardShortcuts({
-    onFlip: useCallback(() => setFlipped(f => !f), []),
-    onRate: handleRate,
-    onNext: handleNext,
-    onPrev: handlePrev,
-    isFlipped: flipped,
-  });
-
   const mastery = progress.repetitions >= 6 ? 100 : progress.repetitions * 17;
 
   return (
@@ -103,10 +104,10 @@ export const FlashcardView = memo(function FlashcardView({ cards, onMaster, onRa
 
       <div
         className={`flashcard ${flipped ? 'flipped' : ''}`}
-        onClick={() => setFlipped(!flipped)}
+        onClick={handleFlip}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === ' ' && setFlipped(!flipped)}
+        onKeyDown={(e) => e.key === ' ' && handleFlip()}
       >
         <div className="flashcard-inner">
           <div className="flashcard-front">
@@ -138,7 +139,7 @@ export const FlashcardView = memo(function FlashcardView({ cards, onMaster, onRa
 
       <div className="card-controls">
         <button className="control-btn" onClick={() => { setCurrent(0); setFlipped(false); }}>Restart</button>
-        <button className="control-btn" onClick={() => setFlipped(!flipped)}>
+        <button className="control-btn" onClick={handleFlip}>
           {flipped ? 'Show Question' : 'Show Answer'}
         </button>
       </div>
