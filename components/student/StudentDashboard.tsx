@@ -390,7 +390,6 @@ export const StudentDashboard = memo(function StudentDashboard({ user, onLogout 
               {tab === 'notes' && 'Upload materials or generate notes from your content'}
               {tab === 'flashcards' && 'Generate flashcards to test your knowledge'}
               {tab === 'quiz' && 'Take a quiz to check your understanding'}
-              {tab === 'chat' && 'Ask questions about your study material'}
               {tab === 'studyplan' && 'Create a personalized study schedule'}
               {tab === 'podcast' && 'Generate an audio summary of your materials'}
               {tab === 'summary' && 'Get a quick summary of your content'}

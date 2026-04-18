@@ -402,13 +402,9 @@ export const TeacherDashboard = memo(function TeacherDashboard({ user, onLogout 
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
     }
-    setToast({ message, type });
+setToast({ message, type });
     toastTimeoutRef.current = setTimeout(() => setToast(null), 4000);
   }, []);
-
-  useEffect(() => {
-    fetchClasses();
-  }, [fetchClasses]);
 
   const fetchClasses = useCallback(async () => {
     setFetchingClasses(true);
@@ -428,6 +424,10 @@ export const TeacherDashboard = memo(function TeacherDashboard({ user, onLogout 
       setFetchingClasses(false);
     }
   }, [user.email, showToast]);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
 
   const createClass = useCallback(async () => {
     if (!newClass.name.trim()) {
