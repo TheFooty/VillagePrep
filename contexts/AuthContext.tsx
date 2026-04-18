@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: data.error };
       }
       return {};
-    } catch (err) {
+    } catch {
       return { error: 'Failed to send code' };
     }
   }
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setUser({ email: data.email, role: data.role, userId: data.userId });
       return {};
-    } catch (err) {
+    } catch {
       return { error: 'Verification failed' };
     }
   }

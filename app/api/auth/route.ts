@@ -2,14 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient, detectRole, isValidEmail } from '@/lib/auth';
 import crypto from 'crypto';
 
-type Role = 'teacher' | 'student';
-
 const SESSION_SECRET = process.env.SESSION_SECRET || process.env.NEXTAUTH_SECRET || 'dev-secret-fallback-change-in-production';
 const CODE_EXPIRY_MINUTES = 10;
 const MAX_ATTEMPTS_PER_CODE = 5;
 const MAX_CODES_PER_15_MIN = 5;
 const SESSION_EXPIRY_DAYS = 7;
-const CSRF_SECRET = process.env.CSRF_SECRET || process.env.SESSION_SECRET || 'dev-secret-fallback-change-in-production';
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -135,7 +132,7 @@ function createSessionToken(): string {
   return crypto.randomUUID();
 }
 
-async function createSession(supabase: Awaited<ReturnType<typeof getSupabaseClient>>, userId: string, email: string): Promise<string | null> {
+async function createSession(supabase: Awaited<ReturnType<typeof getSupabaseClient>>, userId: string, _email: string): Promise<string | null> {
   try {
     const token = createSessionToken();
     const expiresAt = new Date(Date.now() + SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
