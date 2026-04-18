@@ -185,8 +185,10 @@ export const QuizView = memo(function QuizView({ questions, onComplete }: QuizVi
     if (timeLeft <= 0) {
       const final = answers;
       const score = final.filter((a, i) => a === questions[i].correct).length;
-      setShowResult(true);
-      onComplete?.(score, questions.length, final);
+      requestAnimationFrame(() => {
+        setShowResult(true);
+        onComplete?.(score, questions.length, final);
+      });
       return;
     }
     const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);

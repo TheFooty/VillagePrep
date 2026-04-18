@@ -44,7 +44,7 @@ export function FlashcardExporter({ cards, title = 'Flashcards' }: FlashcardExpo
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const content = cards.map((card, i) => `
+    const content = cards.map((card) => `
       <div class="card">
         <div class="front">${card.front}</div>
         <div class="back">${card.back}</div>

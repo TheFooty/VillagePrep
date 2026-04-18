@@ -9,7 +9,7 @@ interface VoiceControlsProps {
 }
 
 export function VoiceControls({ front, back, flipped }: VoiceControlsProps) {
-  const { speakCard, stopSpeaking, isSpeaking, autoPlay, toggleAutoPlay, isSupported } =
+  const { speakCard, isSpeaking, autoPlay, toggleAutoPlay, isSupported } =
     useFlashcardAudio();
 
   if (!isSupported) return null;

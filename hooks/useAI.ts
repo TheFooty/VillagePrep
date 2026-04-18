@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 export interface AIRequest {
   type: string;
@@ -110,7 +110,6 @@ export function useAI() {
       }
 
       const decoder = new TextDecoder();
-      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -119,7 +118,7 @@ export function useAI() {
 
         const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\n');
-        buffer = lines.pop() || '';
+        lines.pop();
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {

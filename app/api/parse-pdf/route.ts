@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
     }
     else if (fileName.endsWith('.pdf')) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const pdfParse = requirePdfParse('pdf-parse');
         const data = await pdfParse(buffer);
         extractedText = data.text;

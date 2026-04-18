@@ -15,10 +15,6 @@ const responseCache = new Map<string, CacheEntry>();
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_CACHE_SIZE = 100;
 
-function getCacheKey(prompt: string): string {
-  return prompt.slice(0, 150).toLowerCase().trim();
-}
-
 function getCachedResponse(key: string): { text: string; cached: boolean } | null {
   const entry = responseCache.get(key);
   if (entry && Date.now() - entry.timestamp < CACHE_TTL) {

@@ -1,48 +1,42 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { UserStats, getUnlockedAchievements, calculateLevel, getLevelProgress, getLevelTitle } from '@/lib/gamification';
 
 const STORAGE_KEY = 'villageprep_stats';
 
-export function useGamification() {
-  const [stats, setStats] = useState<UserStats>(() => {
-    return {
-      xp: 0,
-      level: 1,
-      streak: 0,
-      longestStreak: 0,
-      lastStudyDate: null,
-      totalCardsStudied: 0,
-      totalQuizzesTaken: 0,
-      totalTimeSpent: 0,
-      achievements: [],
-    };
-  });
+const defaultStats: UserStats = {
+  xp: 0,
+  level: 1,
+  streak: 0,
+  longestStreak: 0,
+  lastStudyDate: null,
+  totalCardsStudied: 0,
+  totalQuizzesTaken: 0,
+  totalTimeSpent: 0,
+  achievements: [],
+};
 
-  const [newAchievements, setNewAchievements] = useState<string[]>([]);
-  const isInitializedRef = useRef(false);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    if (typeof window === 'undefined' || isInitializedRef.current) return;
-    
-    isInitializedRef.current = true;
-    
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setStats(parsed);
-      }
-    } catch {
-      // Ignore parse errors
+function loadInitialStats(): UserStats {
+  if (typeof window === 'undefined') return defaultStats;
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved);
     }
-  }, []);
+  } catch {
+    // Ignore parse errors
+  }
+  return defaultStats;
+}
+
+export function useGamification() {
+  const [stats, setStats] = useState<UserStats>(loadInitialStats);
+  const [newAchievements, setNewAchievements] = useState<string[]>([]);
 
   // Save to localStorage when stats change
   useEffect(() => {
-    if (!isInitializedRef.current || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
     
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));

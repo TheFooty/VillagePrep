@@ -1,6 +1,6 @@
 'use client';
 
-import { UserStats, Achievement, ACHIEVEMENTS } from '@/lib/gamification';
+import { UserStats, ACHIEVEMENTS } from '@/lib/gamification';
 
 interface GamificationPanelProps {
   stats: UserStats;

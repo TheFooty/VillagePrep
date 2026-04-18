@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 
@@ -85,7 +85,7 @@ export function useStreamingAI({ onChunk, onComplete, onError }: UseStreamingAIP
                 if (parsed.error) {
                   throw new Error(parsed.error);
                 }
-              } catch (e) {
+              } catch {
                 // Handle non-JSON data (plain text chunks)
                 if (data && data !== '[DONE]') {
                   fullText += data;
