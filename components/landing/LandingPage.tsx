@@ -11,7 +11,9 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    requestAnimationFrame(() => {
+      setMounted(true);
+    });
   }, []);
 
   const smoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, target: string) => {

@@ -2,13 +2,18 @@
 
 import { Button } from '@/components/ui/Button';
 
+type EmptyStateType = 'classes' | 'study-sets' | 'folders' | 'files' | 'flashcards' | 'quiz' | 'notes' | 'chat' | 'generic';
+
 interface EmptyStateProps {
-  type: 'classes' | 'study-sets' | 'folders' | 'files';
+  type?: EmptyStateType;
+  icon?: string;
+  title?: string;
+  description?: string;
   onAction?: () => void;
   actionLabel?: string;
 }
 
-const emptyMessages = {
+const emptyMessages: Record<EmptyStateType, { icon: string; title: string; description: string }> = {
   'classes': {
     icon: '📚',
     title: 'No classes yet',
@@ -29,19 +34,71 @@ const emptyMessages = {
     title: 'No files uploaded',
     description: 'Upload PDF, DOCX, TXT, or image files to get started.',
   },
+  'flashcards': {
+    icon: '🎴',
+    title: 'No flashcards',
+    description: 'Generate flashcards from your study materials to get started.',
+  },
+  'quiz': {
+    icon: '❓',
+    title: 'No quiz questions',
+    description: 'Generate a quiz from your study materials to get started.',
+  },
+  'notes': {
+    icon: '📝',
+    title: 'No notes yet',
+    description: 'Upload materials or generate notes from your content.',
+  },
+  'chat': {
+    icon: '💬',
+    title: 'Start a conversation',
+    description: 'Ask me anything about your study material!',
+  },
+  'generic': {
+    icon: '📦',
+    title: 'Nothing here yet',
+    description: 'Get started by adding some content.',
+  },
 };
 
-export function EmptyState({ type, onAction, actionLabel }: EmptyStateProps) {
-  const { icon, title, description } = emptyMessages[type];
+export function EmptyState({ type = 'generic', icon, title, description, onAction, actionLabel }: EmptyStateProps) {
+  const messages = emptyMessages[type];
 
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-      <div className="text-6xl mb-4 opacity-40">{icon}</div>
-      <h3 className="text-lg font-semibold text-zinc-50 mb-2">{title}</h3>
-      <p className="text-zinc-400 max-w-sm mb-6">{description}</p>
+    <div className="empty-state-container">
+      <div className="empty-state-icon">{icon || messages.icon}</div>
+      <h3 className="empty-state-title">{title || messages.title}</h3>
+      <p className="empty-state-description">{description || messages.description}</p>
       {onAction && actionLabel && (
         <Button onClick={onAction}>{actionLabel}</Button>
       )}
+      <style>{`
+        .empty-state-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 64px 16px;
+          text-align: center;
+        }
+        .empty-state-icon {
+          font-size: 64px;
+          margin-bottom: 20px;
+          opacity: 0.4;
+        }
+        .empty-state-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #fafafa;
+          margin-bottom: 8px;
+        }
+        .empty-state-description {
+          font-size: 14px;
+          color: #71717a;
+          max-width: 320px;
+          margin-bottom: 24px;
+        }
+      `}</style>
     </div>
   );
 }
