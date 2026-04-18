@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient, isValidUUID } from '@/lib/auth';
+import { getSupabaseClient, isValidUUID, validateSession, unauthorizedResponse } from '@/lib/auth';
+
+async function verifyStudySetOwnership(supabase: Awaited<ReturnType<typeof getSupabaseClient>>, studySetId: string, userEmail: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('study_sets')
+    .select('user_email')
+    .eq('id', studySetId)
+    .single();
+
+  if (error || !data) {
+    return false;
+  }
+
+  return data.user_email.toLowerCase() === userEmail.toLowerCase();
+}
 
 export async function GET(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { searchParams } = new URL(req.url);
     const studySetId = searchParams.get('studySetId');
 
@@ -15,6 +34,11 @@ export async function GET(req: NextRequest) {
     }
 
     const supabase = getSupabaseClient();
+
+    const isOwner = await verifyStudySetOwnership(supabase, studySetId, sessionUser.email);
+    if (!isOwner) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
 
     const { data: flashcards, error: fcError } = await supabase
       .from('generated_flashcards')
@@ -63,6 +87,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { studySetId, contentType, content } = await req.json();
 
     if (!studySetId || !contentType || !content) {
@@ -87,6 +116,12 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = getSupabaseClient();
+
+    const isOwner = await verifyStudySetOwnership(supabase, studySetId, sessionUser.email);
+    if (!isOwner) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
+    }
+
     const id = crypto.randomUUID();
 
     let tableName: string;
@@ -124,6 +159,11 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { searchParams } = new URL(req.url);
     const contentId = searchParams.get('contentId');
     const contentType = searchParams.get('contentType');
