@@ -99,6 +99,11 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { studySetId, title, email, folderId } = await req.json();
 
     if (!studySetId || !email) {
@@ -107,6 +112,10 @@ export async function PUT(req: NextRequest) {
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    if (email.toLowerCase() !== sessionUser.email.toLowerCase()) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (!isValidUUID(studySetId)) {
@@ -154,6 +163,11 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const sessionUser = await validateSession(req);
+    if (!sessionUser) {
+      return unauthorizedResponse();
+    }
+
     const { searchParams } = new URL(req.url);
     const studySetId = searchParams.get('studySetId');
     const email = searchParams.get('email');
@@ -164,6 +178,10 @@ export async function DELETE(req: NextRequest) {
 
     if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    if (email.toLowerCase() !== sessionUser.email.toLowerCase()) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (!isValidUUID(studySetId)) {

@@ -24,7 +24,7 @@ if (typeof url !== 'string' || url.length > 500) {
       return NextResponse.json({ error: 'Invalid YouTube video ID' }, { status: 400 });
     }
     
-    let transcript: { start: number; duration: number; text: string }[] = [];
+    let transcript: unknown[] = [];
     
     try {
       const { fetchTranscript } = await import('youtube-transcript');
@@ -72,7 +72,7 @@ if (typeof url !== 'string' || url.length > 500) {
       }, { status: 400 });
     }
 
-const fullText = transcript.map((t) => t.text).join(' ');
+    const fullText = transcript.map((t) => String((t as { text?: unknown }).text ?? '')).join(' ');
 
     if (!fullText.trim()) {
       return NextResponse.json({ error: 'No text content found in transcript' }, { status: 400 });

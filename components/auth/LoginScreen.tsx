@@ -31,15 +31,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     };
   }, []);
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-      }
-    };
-  }, []);
-
   // Focus input when step changes
   useEffect(() => {
     if (step === 'email' && emailInputRef.current) {
@@ -205,7 +196,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
 
       setError('');
       setResendCooldown(30);
-      showToast('Code sent! Check your email.');
+      setError('Code sent! Check your email.');
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+      toastTimeoutRef.current = setTimeout(() => {
+        setError((prev) => prev.includes('Code sent') ? prev : '');
+      }, 3000);
     } catch {
       if (abortControllerRef.current?.signal.aborted) return;
       setError('Network error. Please try again.');
@@ -215,18 +212,6 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       }
     }
   }, [email, resendCooldown, loading]);
-
-  function showToast(message: string) {
-    setError(message);
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
-    toastTimeoutRef.current = setTimeout(() => {
-      if (!error.includes('Code sent')) {
-        setError('');
-      }
-    }, 3000);
-  }
 
   return (
     <div className="login-page">

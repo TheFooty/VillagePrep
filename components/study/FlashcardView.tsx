@@ -102,13 +102,20 @@ export const FlashcardView = memo(function FlashcardView({ cards, onMaster, onRa
       </div>
 
       <div
-        className="flashcard"
+        className={`flashcard ${flipped ? 'flipped' : ''}`}
         onClick={() => setFlipped(!flipped)}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => e.key === ' ' && setFlipped(!flipped)}
       >
-        <p className="flashcard-text">{flipped ? card.back : card.front}</p>
+        <div className="flashcard-inner">
+          <div className="flashcard-front">
+            <p className="flashcard-text">{card.front}</p>
+          </div>
+          <div className="flashcard-back">
+            <p className="flashcard-text">{card.back}</p>
+          </div>
+        </div>
         <span className="flashcard-hint">Click to flip</span>
       </div>
 
@@ -188,30 +195,62 @@ export const FlashcardView = memo(function FlashcardView({ cards, onMaster, onRa
           border-radius: 20px;
           padding: 48px 32px;
           cursor: pointer;
-          transition: all 0.3s;
           min-height: 250px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           text-align: center;
+          perspective: 1000px;
+          position: relative;
         }
-        
+
         .flashcard:hover {
           border-color: #10b981;
           transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         }
-        
+
+        .flashcard-inner {
+          position: relative;
+          width: 100%;
+          transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          transform-style: preserve-3d;
+        }
+
+        .flashcard.flipped .flashcard-inner {
+          transform: rotateY(180deg);
+        }
+
+        .flashcard-front,
+        .flashcard-back {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+
+        .flashcard-back {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          transform: rotateY(180deg);
+        }
+
         .flashcard-text {
           font-size: 22px;
           color: #fafafa;
           line-height: 1.5;
           margin-bottom: 16px;
         }
-        
+
         .flashcard-hint {
           font-size: 13px;
           color: #71717a;
+          transition: opacity 0.2s;
+        }
+
+        .flashcard.flipped .flashcard-hint {
+          opacity: 0;
         }
         
         .rating-buttons {
