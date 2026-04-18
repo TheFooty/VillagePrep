@@ -141,7 +141,7 @@ export const StudentDashboard = memo(function StudentDashboard({ user, onLogout 
       } else if (type === 'flashcards') {
         try {
           const clean = text.replace(/```json|```/g, '').trim();
-          let cards = JSON.parse(clean) as Flashcard[];
+          const cards = JSON.parse(clean) as Flashcard[];
           if (!Array.isArray(cards)) throw new Error('Not an array');
           setFlashcards(cards);
           setFlipped(new Array(cards.length).fill(false));
@@ -153,7 +153,7 @@ export const StudentDashboard = memo(function StudentDashboard({ user, onLogout 
       } else if (type === 'quiz') {
         try {
           const clean = text.replace(/```json|```/g, '').trim();
-          let parsed = JSON.parse(clean) as QuizQuestion[];
+          const parsed = JSON.parse(clean) as QuizQuestion[];
           if (!Array.isArray(parsed)) throw new Error('Not an array');
           setQuiz(parsed);
           setAnswers([]);

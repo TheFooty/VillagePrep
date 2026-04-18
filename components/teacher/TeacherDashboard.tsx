@@ -6,6 +6,7 @@ import { User, VPClass } from '@/types';
 interface TeacherDashboardProps {
   user: User;
   onLogout: () => void;
+  showToast?: (message: string, type?: string) => void;
 }
 
 interface StudentProgress {
@@ -375,7 +376,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
 };
 
-export const TeacherDashboard = memo(function TeacherDashboard({ user, onLogout }: TeacherDashboardProps) {
+export const TeacherDashboard = memo(function TeacherDashboard({ user, onLogout, showToast: externalShowToast }: TeacherDashboardProps) {
   const [classes, setClasses] = useState<VPClass[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState<VPClass | null>(null);
@@ -387,6 +388,7 @@ export const TeacherDashboard = memo(function TeacherDashboard({ user, onLogout 
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
   const [view, setView] = useState<'classes' | 'analytics'>('classes');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cleanup toast timeout on unmount
@@ -399,12 +401,27 @@ export const TeacherDashboard = memo(function TeacherDashboard({ user, onLogout 
   }, []);
 
   const showToast = useCallback((message: string, type: string = 'info') => {
+    if (externalShowToast) {
+      externalShowToast(message, type);
+      return;
+    }
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
     }
-setToast({ message, type });
+    setToast({ message, type });
     toastTimeoutRef.current = setTimeout(() => setToast(null), 4000);
-  }, []);
+  }, [externalShowToast]);
+
+  const copyShareCode = useCallback(async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      showToast('Share code copied to clipboard!', 'success');
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch {
+      showToast('Failed to copy code', 'error');
+    }
+  }, [showToast]);
 
   const fetchClasses = useCallback(async () => {
     setFetchingClasses(true);
@@ -623,9 +640,35 @@ setToast({ message, type });
                         )}
                       </div>
                       {getClassShareCode(cls) && (
-                        <div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                           <p style={styles.shareCodeLabel}>Code</p>
-                          <p style={styles.shareCode}>{getClassShareCode(cls)}</p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyShareCode(getClassShareCode(cls)!);
+                            }}
+                            style={{
+                              ...styles.shareCode,
+                              background: 'rgba(16,185,129,0.15)',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              border: 'none',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = 'rgba(16,185,129,0.25)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = 'rgba(16,185,129,0.15)';
+                            }}
+                          >
+                            <span>{copiedCode === getClassShareCode(cls) ? '✓' : '📋'}</span>
+                            <span>{getClassShareCode(cls)}</span>
+                          </button>
                         </div>
                       )}
                     </div>

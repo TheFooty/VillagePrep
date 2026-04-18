@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseClient } from '@/lib/auth';
+import { getSupabaseClient, detectRole, isValidEmail } from '@/lib/auth';
 import crypto from 'crypto';
 
 type Role = 'teacher' | 'student';
@@ -8,11 +8,7 @@ const SESSION_SECRET = process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-prod
 const CODE_EXPIRY_MINUTES = 10;
 const MAX_ATTEMPTS_PER_CODE = 5;
 const MAX_CODES_PER_15_MIN = 5;
-
-function detectRole(email: string): Role {
-  const schoolDomains = ['@thevillageschool.com', '@villageprep.com', '@school.edu'];
-  return schoolDomains.some(domain => email.endsWith(domain)) ? 'teacher' : 'student';
-}
+const SESSION_EXPIRY_DAYS = 7;
 
 function generateCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -24,19 +20,18 @@ function hashCode(code: string, email: string): string {
     .digest('hex');
 }
 
-async function sendLoginCode(email: string, code: string) {
+async function sendLoginCode(email: string, code: string): Promise<void> {
   const fromAddress = process.env.AUTH_EMAIL_FROM || 'auth@villageprep.net';
 
   if (!process.env.RESEND_API_KEY) {
-    // In development, just log the code
     console.warn(`[DEV] Login code for ${email}: ${code}`);
     return;
   }
 
-  const { Resend } = await import('resend');
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
   try {
+    const { Resend } = await import('resend');
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
     await resend.emails.send({
       from: fromAddress,
       to: email,
@@ -49,107 +44,118 @@ async function sendLoginCode(email: string, code: string) {
   }
 }
 
-async function storeAuthCode(supabase: ReturnType<typeof getSupabaseClient>, email: string, code: string): Promise<{ success: boolean; remaining: number }> {
-  const hashed = hashCode(code, email);
-  const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000).toISOString();
+async function storeAuthCode(supabase: Awaited<ReturnType<typeof getSupabaseClient>>, email: string, code: string): Promise<{ success: boolean; remaining: number }> {
+  try {
+    const hashed = hashCode(code, email);
+    const expiresAt = new Date(Date.now() + CODE_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
-  // Clean up expired codes first
-  await supabase
-    .from('auth_codes')
-    .delete()
-    .lt('expires_at', new Date().toISOString());
+    await supabase
+      .from('auth_codes')
+      .delete()
+      .lt('expires_at', new Date().toISOString());
 
-  // Count codes sent in last 15 minutes
-  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-  const { count, error } = await supabase
-    .from('auth_codes')
-    .select('*', { count: 'exact', head: true })
-    .eq('email', email)
-    .gte('created_at', fifteenMinutesAgo);
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+    const { count, error } = await supabase
+      .from('auth_codes')
+      .select('*', { count: 'exact', head: true })
+      .eq('email', email)
+      .gte('created_at', fifteenMinutesAgo);
 
-  if (error) {
-    console.error('Count query error:', error);
-    throw new Error('Database error checking rate limit');
+    if (error) {
+      console.error('Count query error:', error);
+      throw new Error('Database error checking rate limit');
+    }
+
+    const recentCount = count || 0;
+    if (recentCount >= MAX_CODES_PER_15_MIN) {
+      return { success: false, remaining: 0 };
+    }
+
+    const { error: insertError } = await supabase
+      .from('auth_codes')
+      .insert([{ email, code_hash: hashed, expires_at: expiresAt, attempts: 0 }]);
+
+    if (insertError) {
+      console.error('Insert error:', insertError);
+      throw new Error('Database error storing auth code');
+    }
+
+    return { success: true, remaining: MAX_CODES_PER_15_MIN - recentCount - 1 };
+  } catch (error) {
+    console.error('storeAuthCode error:', error);
+    throw error;
   }
-
-  const recentCount = count || 0;
-  if (recentCount >= MAX_CODES_PER_15_MIN) {
-    return { success: false, remaining: 0 };
-  }
-
-  const { error: insertError } = await supabase
-    .from('auth_codes')
-    .insert([{ email, code_hash: hashed, expires_at: expiresAt, attempts: 0 }]);
-
-  if (insertError) {
-    console.error('Insert error:', insertError);
-    throw new Error('Database error storing auth code');
-  }
-
-  return { success: true, remaining: MAX_CODES_PER_15_MIN - recentCount - 1 };
 }
 
-async function verifyCode(supabase: ReturnType<typeof getSupabaseClient>, email: string, code: string): Promise<{ valid: boolean; error?: string }> {
-  const hashed = hashCode(code, email);
+async function verifyCode(supabase: Awaited<ReturnType<typeof getSupabaseClient>>, email: string, code: string): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const hashed = hashCode(code, email);
 
-  const { data: codes, error } = await supabase
-    .from('auth_codes')
-    .select('*')
-    .eq('email', email)
-    .eq('code_hash', hashed)
-    .gte('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false })
-    .limit(1);
+    const { data: codes, error } = await supabase
+      .from('auth_codes')
+      .select('*')
+      .eq('email', email)
+      .eq('code_hash', hashed)
+      .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-  if (error) {
-    console.error('Error verifying code:', error);
+    if (error) {
+      console.error('Error verifying code:', error);
+      return { valid: false, error: 'Verification failed' };
+    }
+
+    if (!codes || codes.length === 0) {
+      return { valid: false, error: 'Invalid or expired code' };
+    }
+
+    const authCode = codes[0];
+    if (authCode.attempts >= MAX_ATTEMPTS_PER_CODE) {
+      return { valid: false, error: 'Too many attempts. Request a new code.' };
+    }
+
+    const { error: updateError } = await supabase
+      .from('auth_codes')
+      .update({ attempts: authCode.attempts + 1 })
+      .eq('id', authCode.id);
+
+    if (updateError) {
+      console.error('Error updating attempts:', updateError);
+    }
+
+    return { valid: true };
+  } catch (error) {
+    console.error('verifyCode error:', error);
     return { valid: false, error: 'Verification failed' };
   }
-
-  if (!codes || codes.length === 0) {
-    return { valid: false, error: 'Invalid or expired code' };
-  }
-
-  const authCode = codes[0];
-  if (authCode.attempts >= MAX_ATTEMPTS_PER_CODE) {
-    return { valid: false, error: 'Too many attempts. Request a new code.' };
-  }
-
-  const { error: updateError } = await supabase
-    .from('auth_codes')
-    .update({ attempts: authCode.attempts + 1 })
-    .eq('id', authCode.id);
-
-  if (updateError) {
-    console.error('Error updating attempts:', updateError);
-  }
-
-  return { valid: true };
 }
 
 function createSessionToken(): string {
   return crypto.randomUUID();
 }
 
-async function createSession(supabase: ReturnType<typeof getSupabaseClient>, userId: string, email: string): Promise<string | null> {
-  const token = createSessionToken();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+async function createSession(supabase: Awaited<ReturnType<typeof getSupabaseClient>>, userId: string, email: string): Promise<string | null> {
+  try {
+    const token = createSessionToken();
+    const expiresAt = new Date(Date.now() + SESSION_EXPIRY_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-  const { error } = await supabase
-    .from('sessions')
-    .insert([{ user_id: userId, session_token: token, expires_at: expiresAt }]);
+    const { error } = await supabase
+      .from('sessions')
+      .insert([{ user_id: userId, session_token: token, expires_at: expiresAt }]);
 
-  if (error) {
-    console.error('Failed to create session:', error);
+    if (error) {
+      console.error('Failed to create session:', error);
+      return null;
+    }
+
+    return token;
+  } catch (error) {
+    console.error('createSession error:', error);
     return null;
   }
-
-  return token;
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = getSupabaseClient();
-
   try {
     const { email: rawEmail } = await req.json();
     const email = rawEmail?.trim().toLowerCase();
@@ -158,11 +164,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!isValidEmail(email)) {
       return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
     }
 
+    const supabase = getSupabaseClient();
     const code = generateCode();
     const result = await storeAuthCode(supabase, email, code);
 
@@ -198,8 +204,6 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const supabase = getSupabaseClient();
-
   try {
     const { email: rawEmail, code: rawCode } = await req.json();
     const email = rawEmail?.trim().toLowerCase();
@@ -209,11 +213,16 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: 'Email and code are required' }, { status: 400 });
     }
 
+    if (!isValidEmail(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
     const pendingEmail = req.cookies.get('vpPendingEmail')?.value;
     if (!pendingEmail || pendingEmail !== email) {
       return NextResponse.json({ error: 'No pending login. Request a new code.' }, { status: 400 });
     }
 
+    const supabase = getSupabaseClient();
     const verifyResult = await verifyCode(supabase, email, code);
     if (!verifyResult.valid) {
       return NextResponse.json({ error: verifyResult.error }, { status: 400 });
@@ -238,12 +247,12 @@ export async function PUT(req: NextRequest) {
 
       if (error) {
         console.error('Failed to create profile:', error);
-      } else {
-        userData = newProfile;
+        return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 });
       }
+      userData = newProfile;
     }
 
-    const sessionToken = await createSession(supabase, userData?.id || email, email);
+    const sessionToken = await createSession(supabase, userData.id, email);
 
     if (!sessionToken) {
       return NextResponse.json({ error: 'Failed to create session' }, { status: 500 });
@@ -251,12 +260,12 @@ export async function PUT(req: NextRequest) {
 
     const response = NextResponse.json({
       email,
-      role: userData?.role || detectRole(email),
-      userId: userData?.id
+      role: userData.role || detectRole(email),
+      userId: userData.id
     });
 
     response.cookies.set('vpSession', sessionToken, {
-      maxAge: 7 * 24 * 60 * 60,
+      maxAge: SESSION_EXPIRY_DAYS * 24 * 60 * 60,
       httpOnly: true,
       sameSite: 'lax',
       path: '/',
@@ -273,19 +282,20 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const supabase = getSupabaseClient();
-
   try {
     const { searchParams } = new URL(req.url);
     const email = searchParams.get('email');
 
+    const supabase = getSupabaseClient();
+
     if (email) {
+      if (!isValidEmail(email)) {
+        return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+      }
       await supabase
         .from('auth_codes')
         .delete()
         .eq('email', email);
-      const response = NextResponse.json({ message: 'Auth codes cleared for email' });
-      return response;
     }
 
     const sessionToken = req.cookies.get('vpSession')?.value;
@@ -309,8 +319,6 @@ export async function DELETE(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const supabase = getSupabaseClient();
-
   try {
     const sessionToken = req.cookies.get('vpSession')?.value;
 
@@ -318,12 +326,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ authenticated: false });
     }
 
-    const { data: sessions } = await supabase
+    const supabase = getSupabaseClient();
+
+    const { data: sessions, error } = await supabase
       .from('sessions')
       .select('*, profiles(email, role)')
       .eq('session_token', sessionToken)
       .gte('expires_at', new Date().toISOString())
       .limit(1);
+
+    if (error) {
+      console.error('Session lookup error:', error);
+      return NextResponse.json({ authenticated: false });
+    }
 
     if (!sessions || sessions.length === 0) {
       return NextResponse.json({ authenticated: false });

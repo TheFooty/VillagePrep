@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     const videoId = videoIdMatch[1];
     
-    let transcript: any[] = [];
+    let transcript: { start: number; duration: number; text: string }[] = [];
     
     try {
       const { fetchTranscript } = await import('youtube-transcript');
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const fullText = transcript.map((t: any) => t.text).join(' ');
+    const fullText = transcript.map((t) => t.text).join(' ');
     
     return NextResponse.json({ 
       text: fullText,
