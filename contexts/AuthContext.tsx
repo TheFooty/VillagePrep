@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 
 interface User {
   email: string;
@@ -21,14 +21,23 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    checkSession();
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    
+    checkSession(abortController.signal);
+    
+    return () => {
+      abortController.abort();
+      abortControllerRef.current = null;
+    };
   }, []);
 
-  async function checkSession() {
+  async function checkSession(signal?: AbortSignal) {
     try {
-      const res = await fetch('/api/auth');
+      const res = await fetch('/api/auth', { signal });
       const data = await res.json();
       if (data.authenticated && data.email) {
         setUser({ email: data.email, role: data.role });

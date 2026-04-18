@@ -266,7 +266,17 @@ export const StudentDashboard = memo(function StudentDashboard({ user, onLogout 
                 <div className="chat-empty">
                   <div className="empty-icon">💬</div>
                   <p>Ask me anything about your study material!</p>
-                  <span className="empty-hint">Upload materials first for better answers</span>
+                  <span className="empty-hint">
+                    {myDocs ? 'Type a question below to get started' : 'Upload materials first for personalized answers'}
+                  </span>
+                  {!myDocs && (
+                    <div className="upload-prompt">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 3v14M3 10h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      Upload Material
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
@@ -669,6 +679,19 @@ export const StudentDashboard = memo(function StudentDashboard({ user, onLogout 
           color: #52525b;
           max-width: 300px;
           margin: 0 auto;
+        }
+
+        .upload-prompt {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 16px;
+          padding: 10px 16px;
+          background: rgba(16, 185, 129, 0.15);
+          color: #10b981;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 500;
         }
 
         .loading-msg {
